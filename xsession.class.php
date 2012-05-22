@@ -3,14 +3,14 @@
 		//xSession singleton unique instance
 		private static $XSession = null;
 		//emptying flag default false
-		private static $destroy = false;
+		private static $destroy = FALSE;
 		//effective temporary session array
 		public $data = array();
 		public $log_file = 'paf.log';
 		public $debug = 1;
 		public $FirePHP = NULL;
-		private function __construct() {
-			self::$destroy = false;
+		private function __construct($params = array()) {
+			self::$destroy = FALSE;
 			$this->data = $_SESSION;
 			/*** For debugging (use only with FireBug & FirePHP)***/
 			if($this->debug==1) {
@@ -18,15 +18,15 @@
 				$this->FirePHP = FirePHP::getInstance(true);
 			}//if($this->debug==1)
 			/* END For debugging */
-		}//private function __construct()
+		}//private function __construct($params = array())
 
 		//classic singleton method for retrieving the object
-		public static function GetInstance() {
+		public static function GetInstance($params = array()) {
 			if(is_null(self::$XSession)) {
-				self::$XSession = new xSession();
+				self::$XSession = new xSession($params);
 			}//if(is_null(self::$xSession))
 			return self::$XSession;
-		}//public static function GetInstance()
+		}//public static function GetInstance($params = array())
 
 		//get a global parameter from the temporarry session
 		public function GetParam($key) {
@@ -49,7 +49,7 @@
 		}//public static function Dump()
 
 		//Commit the temporary session into the root session
-		public function Commit() {
+		public function Commit($params = array()) {
 			$_SESSION = array();
 			if(self::$destroy===TRUE) {
 				$this->data = array();
@@ -58,7 +58,7 @@
 					$_SESSION[$k] = $v;
 				}//foreach($this->data as $k=>$v)
 			}//if(self::$destroy===true)
-		}//public function Commit()
+		}//public function Commit($params = array())
 
 		function Echo2File($msg,$file = "") {
 			$lf = strlen($file)>0 ? $file : realpath(dirname(__FILE__)).'/'.$this->log_file;
