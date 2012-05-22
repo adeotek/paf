@@ -23,9 +23,9 @@
 		$errors .= 'Empty Request!';
 	}//if(!$request)
 	//load the PAF base class
-	require_once ('saja.php');
+	require_once ('paf.class.php');
 	if(!$errors) {
-		//start session and set ID to the expected saja session
+		//start session and set ID to the expected paf session
 		list($php,$session_id,$request_id) = explode('^!PAF!^',$request);
 		//validate this request
 		if(!array_key_exists('PAF_REQUEST',$xsession->data) || !is_array($xsession->data['PAF_REQUEST']['REQUESTS'])) {

@@ -11,14 +11,12 @@
 		var $class_name = 'myPAF';
 		//set utf8 support
 		var $with_utf8 = TRUE;
-		//pad functions names having less than this many characters in their name
-		var $function_padding = 15;
 		var $actions = array();
 		var $pafi;
 		var $http_key;
 		var $with_history;
 		//separator for function arguments
-		var $argument_separator = '^^paf!arg^';
+		var $argument_separator = '^^pafa^';
 		//default parsing arguments separators
 		var $parameters_separator = ',';
 		var $array_elements_separator = '~';
@@ -96,47 +94,41 @@
 			$js .= '<script type="text/javascript" src="'.$this->mypath.'paf.js"></script>'."\n";
 			return $js;
 		}//function js_init()
-
 		
-		
-		
-		
-		function saja_history($initializer) {
-			$this->historyAvailable = true;
-			return '
-			<iframe style="display:none;" id="sajaHistory" name="sajaHistory" src="'.$this->mypath.'saja.php/1/"></iframe>
-			<script type="text/javascript">
-			saja.onHistoryChange = function(i){
-				saja.history[i]();
-			}
-			saja.historyIndex = -1;
-			saja.history = [];
-			saja.sajaHistory = window.frames["sajaHistory"];
-			saja.lastHash = saja.sajaHistory.location.hash;
-			saja.monitorHistory();
-			'.$this->runWithHistory($initializer).'
-			</script>
-			';
-		}
+		function paf_history($initializer) {
+			$this->with_history = true;
+			$result = '<iframe style="display:none;" id="pafHistory" name="pafHistory" src="'.$this->mypath.'paf.php/1/"></iframe>'."\n";
+			$result .= '<script type="text/javascript">'."\n";
+			$result .= "\t".'PAF.onHistoryChange = function(i) {'."\n";
+			$result .= "\t\t".'PAF.history[i]();'."\n";
+			$result .= "\t".'}//PAF.onHistoryChange = function(i)'."\n";
+			$result .= "\t".'PAF.historyIndex = -1;'."\n";
+			$result .= "\t".'PAF.history = [];'."\n";
+			$result .= "\t".'PAF.pafHistory = window.frames["pafHistory"];'."\n";
+			$result .= "\t".'PAF.lastHash = PAF.pafHistory.location.hash;'."\n";
+			$result .= "\t".'PAF.monitorHistory();'."\n";
+			$result .= "\t".$this->runWithHistory($initializer)."\n";
+			$result .= '</script>'."\n";
+			return $result;
+		}//function paf_history($initializer)
 
-		function saja_status($style = '',$string = 'Working...') {
-			return "<span id=\"sajaStatus\" style=\"visibility:hidden;$style\">".htmlentities($string)."</span>";
-		}
+		function paf_status($style = '',$string = 'Working...') {
+			return '<span id="pafStatus" style="display: none; '.$style.'">'.htmlentities($string).'</span>';
+		}//function paf_status($style = '',$string = 'Working...')
 
-
-		/*** Call de saja cu rulare de script js la inceput si/sau sfarsit ***/
 		//$js_script = script js sau numele unui fisier js care sa se ruleze inainte si/sau dupa call-ul de ajax
-		function run($commands,$with_status = 1,$js_script = '',$process_file = null,$use_history = 'false') {
-			if(!$this->http_key)
+		function run($commands,$with_status = 1,$js_script = '',$class_file = NULL,$use_history = 'false') {
+			if(!$this->http_key) {
 				$this->clear_secure_http();
-			if(!$process_file)
-				$process_file = $this->get_process_file();
-			return $this->ParseCommands($commands,$process_file,$use_history,$with_status,$js_script);
-		}
+			}//if(!$this->http_key)
+			if(!$class_file) {
+				$class_file = $this->get_class_file();
+			}//if(!$class_file)
+			return $this->ParseCommands($commands,$class_file,$use_history,$with_status,$js_script);
+		}//function run($commands,$with_status = 1,$js_script = '',$class_file = NULL,$use_history = 'false') {
 
-		function ParseCommands($commands,$process_file,$use_history = 'false',$with_status = 1,$js_script = '') {
-			$xsession = XSession::GetInstance();
-			//echo2file("WithStatus=$with_status",$xsession->GetGlobalParam('app_absolute_path').'/debugging.log');
+		function ParseCommands($commands,$class_file,$use_history = 'false',$with_status = 1,$js_script = '') {
+			$xsession = xSession::GetInstance();
 			$commands = $this->texplode(';',$commands);
 			$all_commands = '';
 			$request_id = '';
@@ -144,10 +136,12 @@
 				$inputType = '';
 				$targets = '';
 				$tmp = $this->texplode('->',$command);
-				if(isset($tmp[0]))
+				if(isset($tmp[0])) {
 					$functions = $tmp[0];
-				if(isset($tmp[1]))
+				}//if(isset($tmp[0]))
+				if(isset($tmp[1])) {
 					$targets = $tmp[1];
+				}//if(isset($tmp[1]))
 				if(strstr($functions,'(')) {
 					$action = '';
 					$target = '';
@@ -156,35 +150,38 @@
 					list($function,$args) = $inputArray;
 					$args = substr($args,0,-1);
 					$tmp = $this->texplode(',',$targets);
-					if(isset($tmp[0]))
+					if(isset($tmp[0])) {
 						$target = $tmp[0];
-					if(isset($tmp[1]))
+					}//if(isset($tmp[0]))
+					if(isset($tmp[1])) {
 						$action = $tmp[1];
+					}//if(isset($tmp[1]))
 					$tmp = $this->texplode(':',$target);
-					if(isset($tmp[0]))
+					if(isset($tmp[0])) {
 						$targetId = $tmp[0];
-					if(isset($tmp[1]))
+					}//if(isset($tmp[0]))
+					if(isset($tmp[1])) {
 						$targetProperty = $tmp[1];
-					if(!$action)
+					}//if(isset($tmp[1]))
+					if(!$action) {
 						$action = 'r';
-					if(!$targetProperty)
+					}//if(!$action)
+					if(!$targetProperty) {
 						$targetProperty = 'innerHTML';
-					if(!$targets)
+					}//if(!$targetProperty)
+					if(!$targets) {
 						$action = $targetProperty = $targetId = '';
+					}//if(!$targets)
 					if($function) {
-						$request_id = md5($function.$this->salt);
-						$xsession->data['PAF_PROCESS']['REQUESTS'][$request_id] = array('UTF8'=>$this->true_utf8,'FUNCTION'=>$function,'PROCESS_FILE'=>$process_file ? $process_file : $this->get_process_file(),'CLASS'=>$this->get_process_class());
+						$request_id = md5($function.$this->pafi);
+						$xsession->data['PAF_REQUEST']['REQUESTS'][$request_id] = array('UTF8'=>$this->with_utf8,'FUNCTION'=>$function,'CLASS_FILE'=>$class_file ? $class_file : $this->get_class_file(),'CLASS'=>$this->get_class_name());
 						$session_id = session_id();
-						//adaugat de Horia pentru a transmite sectiunea curenta
-						//global $xsession;
-						$cursection = $xsession->current_section;
-						//
-						$all_commands .= "saja.run('".$this->parseArgs($args,'PHP')."','$targetId','$action','$targetProperty','$session_id','$request_id',$use_history,'$cursection','$with_status','$js_script');";
-					}
-				}
-			}
+						$all_commands .= "PAF.run('".$this->parseArgs($args,'PHP')."','$targetId','$action','$targetProperty','$session_id','$request_id',$use_history,'$with_status','$js_script');";
+					}//if($function)
+				}//if(strstr($functions,'('))
+			}//foreach($commands as $command)
 			return $all_commands;
-		}
+		}//function ParseCommands($commands,$class_file,$use_history = 'false',$with_status = 1,$js_script = '')
 
 		function parseArgs($arg,$getType) {
 			$concatSeparators = array($key_value_separator,$array_elements_separator,$parameters_separator);
@@ -197,7 +194,7 @@
 			}else{
 				$mySeparator = $concatSeparators;
 				$concatSeparators = array();
-			}
+			}//if(is_array($concatSeparators) && !empty($concatSeparators))
 			if(sizeof($concatSeparators)>0) {
 				$sufix = $mySeparator==',' ? $this->argument_separator : "'+'$mySeparator";
 				$i = 0;
@@ -229,11 +226,11 @@
 							if($i)
 								$inner .= $sufix;
 							if($property)
-								$inner .= "'+saja.Get('$id','$property')+'";
+								$inner .= "'+PAF.Get('$id','$property')+'";
 							else if($a || is_numeric($a))
-								$inner .= "'+saja.Get($a)+'";
+								$inner .= "'+PAF.Get($a)+'";
 							else
-								$inner .= "'+saja.Get($id)+'";
+								$inner .= "'+PAF.Get($id)+'";
 							$i++;
 						}//if($getType=='PHP')
 					}//foreach ($this->texplode($mySeparator,$arg) as $a)
@@ -250,29 +247,28 @@
 					}//if(strstr($arg,':'))
 					if($getType=='PHP') {
 						if($property)
-							$inner = "'+saja.Get('$id','$property')+'";
+							$inner = "'+PAF.Get('$id','$property')+'";
 						else if($arg || is_numeric($arg))
-							$inner = "'+saja.Get($arg)+'";
+							$inner = "'+PAF.Get($arg)+'";
 						else
-							$inner = "'+saja.Get($id)+'";
+							$inner = "'+PAF.Get($id)+'";
 					}//if($getType=='PHP')
 					return $inner;
-				}
+				}//if(strlen($mySeparator)>0)
 			}//if(sizeof($concatSeparators)>0)
-		}//function parseConcatArgs($arg,$getType,$concatSeparators=array())
+		}//function parseArgs($arg,$getType)
 
 		function texplode($seperator,$str) {
 			$vals = array();
-			foreach(explode($seperator, $str) as $val) {
+			foreach(explode($seperator,$str) as $val) {
 				if(is_numeric($val)) {
 					$vals[] = $val;
 				} else if(strlen($val)>0) {
 					$vals[] = trim($val);
-				}
-			}
+				}//if(is_numeric($val))
+			}//foreach(explode($seperator,$str) as $val)
 			return $vals;
-		}
-
+		}//function texplode($seperator,$str)
 
 		/*** PAF js response functions ***/
 		//execute javascript code
@@ -314,29 +310,29 @@
 			if(count($target_arr2)>1) {
 				$targetProperty = $target_arr2[1];
 			}//if(count($target_arr2)>1)
-			if(!$action){
+			if(!$action) {
 				$action = 'r';
-			}
+			}//if(!$action)
 			if(!$targetProperty) {
 				$targetProperty = 'innerHTML';
-			}
-			$action = "saja.Put(".($this->true_utf8 ? 'decodeURIComponent' : 'unescape')."('".rawurlencode($content)."'),'$targetId','$action','$targetProperty')";
+			}//if(!$targetProperty)
+			$action = "PAF.Put(".($this->with_utf8 ? 'decodeURIComponent' : 'unescape')."('".rawurlencode($content)."'),'$targetId','$action','$targetProperty')";
 			$this->add_action($action);
 		}//function text($content,$target)
 
 		//hide an element
 		function hide($element) {
-			$this->add_action("saja.Put('none','$element','r','style.display')");
+			$this->add_action("PAF.Put('none','$element','r','style.display')");
 		}//function hide($element)
 
 		//show an element
 		function show($element) {
-			$this->add_action("saja.Put('','$element','r','style.display')");
+			$this->add_action("PAF.Put('','$element','r','style.display')");
 		}//function show($element)
 
 		//set style for an element
 		function style($element,$styleString) {
-			$this->add_action("saja.SetStyle('$element', '$styleString')");
+			$this->add_action("PAF.SetStyle('$element', '$styleString')");
 		}//function style($element,$styleString)
 
 		//return response actions to javascript for execution
@@ -351,38 +347,37 @@
 		}//function add_action($js)
 
 		function get_actions() {
-			return ($this->hasActions() ? '<saja_split>' : '').implode(';',$this->actions);
+			return ($this->hasActions() ? '^paf!split^' : '').implode(';',$this->actions);
 		}//function get_actions()
 
 		/*** Request execution ***/
 		function runFunc($function,$args) {
-			$xsession = XSession::GetInstance();
+			$xsession = xSession::GetInstance();
 			//kill magic quotes
 			if(get_magic_quotes_gpc()) {
 				$args = stripslashes($args);
-			}
+			}//if(get_magic_quotes_gpc())
 			//decode encrypted HTTP data if needed
-			$lhttpkey = $xsession->GetGlobalParam('PAF_HTTPK');
+			$lhttpkey = $xsession->GetParam('PAF_HTTPK');
 			if(isset($lhttpkey)) {
 				$this->secure_http();
 				$args = $this->rc4($this->http_key,utf8_decode(rawurldecode($args)));
-			}
-			//$this->echo2file($args,'F:/xampp/htdocs/gestcart/debugging.log');
+			}//if(isset($lhttpkey))
 			$args = explode($this->argument_separator,$args,100);
 			//limited to 100 arguments for DNOS attack protection
 			for($i = 0;$i<count($args);$i++) {
-				if($this->true_utf8){
+				if($this->with_utf8) {
 					$args[$i] = $this->utf8_unserialize(rawurldecode($args[$i]));
 				}else{
 					$args[$i] = unserialize(utf8_decode(rawurldecode($args[$i])));
-				}
-			}
+				}//if($this->with_utf8)
+			}//for($i = 0;$i<count($args);$i++)
 			if(method_exists($this,$function)) {
 				echo call_user_func_array(array(&$this,$function),$args);
 			} else {
-				echo "ERROR: [$function] Not validated.";
-			}
-		}
+				echo "PAF ERROR: [$function] Not validated.";
+			}//if(method_exists($this,$function))
+		}//function runFunc($function,$args)
 
 		function utf8_unserialize($str) {
 			if(preg_match('/^a:[0-9]+:{s:[0-9]+:"/',$str)) {
@@ -407,8 +402,8 @@
 				$args = preg_split('/^s:[0-9]+:"([\w\W]*?)";$/',$str,-1,PREG_SPLIT_DELIM_CAPTURE);
 				$ret = preg_replace('/\";(.)s:[0-9]*:\"/','$1',$args[1]);
 				return $ret;
-			}
-		}
+			}//if(preg_match('/^a:[0-9]+:{s:[0-9]+:"/',$str))
+		}//function utf8_unserialize($str)
 
 		//RC4 Encryption from http://sourceforge.net/projects/rc4crypt
 		function rc4($pwd,$data) {
@@ -418,13 +413,13 @@
 			for($i = 0;$i<256;$i++) {
 				$key[$i] = ord($pwd[$i % $pwd_length]);
 				$box[$i] = $i;
-			}
+			}//for($i = 0;$i<256;$i++)
 			for($j = $i = 0;$i<256;$i++) {
 				$j = ($j + $box[$i] + $key[$i]) % 256;
 				$tmp = $box[$i];
 				$box[$i] = $box[$j];
 				$box[$j] = $tmp;
-			}
+			}//for($j = $i = 0;$i<256;$i++)
 			for($a = $j = $i = 0;$i<$data_length;$i++) {
 				$a = ($a + 1) % 256;
 				$j = ($j + $box[$a]) % 256;
@@ -433,9 +428,9 @@
 				$box[$j] = $tmp;
 				$k = $box[(($box[$a] + $box[$j]) % 256)];
 				$cipher .= chr(ord($data[$i]) ^ $k);
-			}
+			}//for($a = $j = $i = 0;$i<$data_length;$i++)
 			return $cipher;
-		}
+		}//function rc4($pwd,$data)
 
 	}//abstract class PAF
 ?>
