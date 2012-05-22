@@ -1,14 +1,14 @@
 <?php
+	//error_reporting(E_ALL);
 	if(!session_id()) {
 		session_start();
 	}//if(!session_id())
 	//set_time_limit(30);
-	//error_reporting(E_ALL);
 	//let browser know that response is utf-8 encoded
 	header('Content-Type: text/html; charset=utf-8');
 	$errors = '';
 	if(!is_object($xsession)) {
-		require_once ('xsession.class.php');
+		require_once ('xsession.php');
 		$xsession = xSession::GetInstance();
 	}//if(is_null($xsession))
 	//initialize vars

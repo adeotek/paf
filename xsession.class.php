@@ -1,5 +1,5 @@
 <?php
-	class xSession {
+	class xSessionBase {
 		//xSession singleton unique instance
 		private static $XSession = null;
 		//emptying flag default false
@@ -73,5 +73,5 @@
 			return FALSE;
 		}//function Echo2File($msg,$file = "")
 		
-	}//class xSession
+	}//class xSessionBase
 ?>
