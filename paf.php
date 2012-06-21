@@ -1,9 +1,5 @@
 <?php
 	//error_reporting(E_ALL);
-	if(!session_id()) {
-		session_start();
-	}//if(!session_id())
-	//set_time_limit(30);
 	//let browser know that response is utf-8 encoded
 	header('Content-Type: text/html; charset=utf-8');
 	$errors = '';

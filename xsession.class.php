@@ -1,9 +1,14 @@
 <?php
 	class xSessionBase {
 		//xSession singleton unique instance
-		private static $XSession = null;
+		private static $XSession = NULL;
 		//emptying flag default false
 		private static $destroy = FALSE;
+		/*session settings*/
+		public static $session_started = FALSE;
+		public static $session_timeout = 1800;
+		public static $request_time_limit = 1200;
+		public static $session_file_path = '';
 		//effective temporary session array
 		public $data = array();
 		public $log_file = 'paf.log';
@@ -22,6 +27,8 @@
 
 		//classic singleton method for retrieving the object
 		public static function GetInstance($params = array()) {
+			//initiate session and check session timeout
+			self::SessionStart();
 			if(is_null(self::$XSession)) {
 				self::$XSession = new xSession($params);
 			}//if(is_null(self::$xSession))
@@ -59,6 +66,29 @@
 				}//foreach($this->data as $k=>$v)
 			}//if(self::$destroy===true)
 		}//public function Commit($params = array())
+		
+		static function SessionStart() {
+	        ini_set('session.gc_maxlifetime',self::$session_timeout);
+			if(!self::$session_started) {
+				if(strlen(self::$session_file_path)>0) {
+					session_save_path(realpath(dirname(__FILE__)).self::$session_file_path);
+				}//if(strlen(self::$session_file_path)>0)
+				session_start();
+				self::$session_started = TRUE;	
+			}//if(!self::$session_started)
+	        if(array_key_exists('expires_at',$_SESSION) && isset($_SESSION['expires_at']) && $_SESSION['expires_at'] < time()) {
+	            session_destroy();
+				if(strlen(self::$session_file_path)>0) {
+					session_save_path(realpath(dirname(__FILE__)).self::$session_file_path);
+				}//if(strlen(self::$session_file_path)>0)
+	            session_start();
+	            session_regenerate_id();
+	            $_SESSION = array();
+				self::$session_started = TRUE;
+	        }//if(array_key_exists('expires_at',$_SESSION) && isset($_SESSION['expires_at']) && $_SESSION['expires_at'] < time())
+	        $_SESSION['expires_at'] = time() + self::$session_timeout;
+			set_time_limit(self::$request_time_limit);
+	    }//static function SessionStart()
 
 		function Echo2File($msg,$file = "") {
 			$lf = strlen($file)>0 ? $file : realpath(dirname(__FILE__)).'/'.$this->log_file;
