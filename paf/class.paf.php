@@ -8,7 +8,7 @@
  * @author     Hinter Software
  * @copyright  Copyright (c) 2004 - 2013 Hinter Software
  * @license    LICENSE.txt
- * @version    1.2.0
+ * @version    1.2.1
  * @filesource
  */
 	/**
@@ -83,14 +83,19 @@
 		public $app_web_link = '';
 		/**
 		 * @var    string Application domain (auto-set on constructor)
-		 * @access protected
+		 * @access public
 		 */
-		protected $app_domain = '';
+		public $app_domain = '';
+		/**
+		 * @var    string Application web protocol (http/https)
+		 * @access public
+		 */
+		public $app_web_protocol = '';
 		/**
 		 * @var    string Application folder inside www root (auto-set on constructor)
-		 * @access protected
+		 * @access public
 		 */
-		protected $app_folder = '';
+		public $app_folder = '';
 		/**
 		 * @var    bool Flag to indicate if the request is ajax or not
 		 * @access public
@@ -134,10 +139,11 @@
 			} else {
 				$this->app_folder = rtrim(dirname($_SERVER['SCRIPT_NAME']),'/');
 			}//if(is_array($params) && array_key_exists('startup_path',$params) && strlen($params['startup_path'])>0)
-			$this->app_web_link = (isset($_SERVER["HTTPS"]) ? 'https' : 'http').'://'.$this->app_domain.$this->app_folder;
+			$this->app_web_protocol = (isset($_SERVER["HTTPS"]) ? 'https' : 'http').':';
+			$this->app_web_link = $this->app_web_protocol.'//'.$this->app_domain.$this->app_folder;
 			$this->ajax = $ajax;
 			if($with_session) {
-				$this->_paf_state = (bool)$_SESSION;
+				$this->_paf_state = isset($_SESSION);
 				$this->data = $_SESSION;
 			} else {
 				$this->_paf_state = TRUE;
@@ -209,17 +215,18 @@
 				ini_set('session.gc_maxlifetime',self::$session_timeout);
 				ini_set('session.cache_expire',self::$session_timeout/60);
 				$store_to_file = TRUE;
-				if(self::$session_memcached===TRUE && class_exists('Memcached')) {
+				if(self::$session_memcached===TRUE && class_exists('Memcached',FALSE)) {
 					$store_to_file = FALSE;
 					try {
 						ini_set('session.save_handler','memcached');
 						ini_set('session.save_path',self::$session_memcached_server);
+						ini_set('session.cache_expire',intval(self::$session_timeout/60));
 						session_start();
 					} catch(Exception $e) {
 						self::AddToLog($e->getMessage(),$absolute_path.self::$logs_path.self::$errors_log_file);
 						$store_to_file = TRUE;
 					}//try
-				}//if(self::$session_memcached===TRUE && class_exists('Memcache'))
+				}//if(self::$session_memcached===TRUE && class_exists('Memcache',FALSE))
 				if($store_to_file) {
 					ini_set('session.save_handler','files');
 					if(strlen(self::$session_file_path)>0) {
@@ -243,18 +250,19 @@
 				ini_set('session.gc_maxlifetime',self::$session_timeout);
 				ini_set('session.cache_expire',self::$session_timeout/60);
 				$store_to_file = TRUE;
-				if(self::$session_memcached===TRUE && class_exists('Memcached')) {
+				if(self::$session_memcached===TRUE && class_exists('Memcached',FALSE)) {
 					$store_to_file = FALSE;
 					try {
 						ini_set('session.save_handler','memcached');
 						ini_set('session.save_path',self::$session_memcached_server);
+						ini_set('session.cache_expire',intval(self::$session_timeout/60));
 						session_id(self::GenerateUID($cfulldomain.$cuseragent.$cremoteaddress,'sha256'));
 						session_start();
 					} catch(Exception $e) {
 						self::AddToLog($e->getMessage(),$absolute_path.self::$logs_path.self::$errors_log_file);
 						$store_to_file = TRUE;
 					}//try
-				}//if(self::$session_memcached===TRUE && class_exists('Memcache'))
+				}//if(self::$session_memcached===TRUE && class_exists('Memcache',FALSE))
 				if($store_to_file) {
 					ini_set('session.save_handler','files');
 					if(strlen(self::$session_file_path)>0) {
@@ -286,7 +294,12 @@
 						if($dv['active']!==TRUE) { continue; }
 						if($dk=='PhpConsole') {
 							require_once($this->app_absolute_path.self::$paf_path.'debug/'.$dk.'/__autoload.php');
-							PhpConsole\Connector::setPostponeStorage(new PhpConsole\Storage\File('/tmp/phpcons.data'));
+							$pcdf_path = !strrpos($this->app_absolute_path,'/')
+								? (!strrpos($this->app_absolute_path,'\\')
+									? '/tmp'
+									: substr($this->app_absolute_path,0,strrpos($this->app_absolute_path,'\\')))
+								: substr($this->app_absolute_path,0,strrpos($this->app_absolute_path,'/'));
+							PhpConsole\Connector::setPostponeStorage(new PhpConsole\Storage\File($pcdf_path.'/phpcons.data'));
 							$this->debug_objects[$dk] = PhpConsole\Connector::getInstance();
 							if(PhpConsole\Connector::getInstance()->isActiveClient()) {
 								$this->debug_objects[$dk]->setServerEncoding('UTF-8');
@@ -438,18 +451,14 @@
 					$this->areq = new $class($this);
 					$this->areq->SetPostParams($post_params);
 					$this->areq->SetUtf8($with_utf8);
-					$this->areq->RunFunc($function,$php);
+					$errors = $this->areq->RunFunc($function,$php);
 					if($this->areq->HasActions()) { echo $this->areq->Send(); }
 					$content = ob_get_contents();
 				} else {
 					$content = $errors;
 				}//if(!$errors)
 				ob_end_clean();
-				if($this->areq->GetUtf8()) {
-					echo $content;
-				} else {
-					echo utf8_encode($content);
-				}//if($this->areq->GetUtf8())
+				echo $this->areq->GetUtf8() ? $content : utf8_encode($content);
 			} else {
 				XSession::AddToLog(array('type'=>'error','message'=>$errors,'no'=>-1,'file'=>__FILE__,'line'=>__LINE__),$this->app_absolute_path.self::$logs_path.self::$errors_log_file);
 				$this->RedirectOnError();
@@ -545,16 +554,12 @@
 
 		/* Commit the temporary session into the root session */
 		public function CommitSession($clear = FALSE,$preserve_output_buffer = FALSE) {
-			if(self::$output_buffer_started===TRUE && $preserve_output_buffer!==TRUE && $this->ajax!==TRUE) {
-				ob_flush();
-			}//if(self::$output_buffer_started===TRUE && $preserve_output_buffer!==TRUE && $this->ajax!==TRUE)
+			if(self::$output_buffer_started===TRUE && $preserve_output_buffer!==TRUE && $this->ajax!==TRUE) { ob_flush(); }
 			$_SESSION = array();
 			if($clear===TRUE || $this->clear_session===TRUE) {
 				$this->data = array();
 			} else {
-				foreach($this->data as $k=>$v) {
-					$_SESSION[$k] = $v;
-				}//foreach($this->data as $k=>$v)
+				foreach($this->data as $k=>$v) { $_SESSION[$k] = $v; }
 			}//if($clear===TRUE)
 		}//public function CommitSession($clear = FALSE)
 

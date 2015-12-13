@@ -8,7 +8,7 @@
  * @author     Hinter Software
  * @copyright  Copyright (c) 2004 - 2013 Hinter Software
  * @license    LICENSE.txt
- * @version    1.2.0
+ * @version    1.2.1
  * @filesource
  */
 	/**
@@ -186,9 +186,7 @@
 		 * @access public
 		 */
 		public function SetPostParams($params) {
-			if(is_array($params) && count($params)>0) {
-				$this->paf_post_params = $params;
-			}//if(is_array($params) && count($params)>0)
+			if(is_array($params) && count($params)>0) { $this->paf_post_params = $params; }
 		}//END public function SetPostParams
 
 		public function GetSecureHttp() {
@@ -313,7 +311,7 @@
 			if(!is_array($confirm) || !count($confirm)) { return 'undefined'; }
 			switch(get_array_param($confirm,'type','js','is_notempty_string')) {
 				case 'jqui':
-					// ToDo: de implementat jQueryUI dialog box
+					// TODO: de implementat jQueryUI dialog box
 					//$confirm_str = '{ "type": "jqui", "txt": "'.get_array_param($confirm,'type',NULL,'is_notempty_string').'" }';
 					return 'undefined';
 					break;
@@ -450,9 +448,7 @@
 		//START Request execution
 		public function RunFunc($function,$args) {
 			//Kill magic quotes if they are on
-			if(get_magic_quotes_gpc()) {
-				$args = stripslashes($args);
-			}//if(get_magic_quotes_gpc())
+			if(get_magic_quotes_gpc()) { $args = stripslashes($args); }
 			//decode encrypted HTTP data if needed
 			if(self::$paf_secure_http) {
 				if(!$this->paf_http_key) { return "PAFReq ERROR: [$function] Not validated."; }
@@ -472,6 +468,7 @@
 			} else {
 				echo "PAFReq ERROR: [$function] Not validated.";
 			}//if(method_exists($this,$function))
+			return NULL;
 		}//END public function RunFunc($function,$args)
 		//END Request execution
 		private function Utf8Unserialize($str) {
@@ -499,6 +496,5 @@
 				return $ret;
 			}//if(preg_match('/^a:[0-9]+:{s:[0-9]+:"/',$str))
 		}//END private function Utf8Unserialize($str)
-
 	}//END class PAFReq extends PAFConfig
 ?>

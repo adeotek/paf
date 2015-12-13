@@ -8,7 +8,7 @@
  * @author     Hinter Software
  * @copyright  Copyright (c) 2004 - 2013 Hinter Software
  * @license    LICENSE.txt
- * @version    1.2.0
+ * @version    1.2.1
  * @filesource
  */
 	/**

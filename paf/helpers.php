@@ -9,7 +9,7 @@
  * @author     Hinter Software
  * @copyright  Copyright (c) 2004 - 2013 Hinter Software
  * @license    LICENSE.txt
- * @version    1.2.0
+ * @version    1.2.1
  * @filesource
  */
 	/**
@@ -36,6 +36,27 @@
 	 * PAF_DBG_INFO constant definition (used as parameter in PAF class debug methods)
 	 */
 	define('PAF_DBG_INFO','info');
+	/**
+	 * Echo string after applying htmlentities to it
+	 *
+	 * @param   string $string String to echo
+	 * @return  bool Returns TRUE on success or FALSE if $string is of an unsupporten type
+	 */
+	function secho($string) {
+		if(is_array($string) || is_object($string)) { return FALSE; }
+		echo htmlentities($string);
+		return TRUE;
+	}//END function secho
+	/**
+	 * File unlink with check if file exists
+	 *
+	 * @param   string $file File to unlink
+	 * @return  bool Returns TRUE on success or FALSE on error or if the file doesn't exist
+	 */
+	function sunlink($file) {
+		if(!is_string($file) || !strlen($file) || !file_exists($file)) { return FALSE; }
+		try { unlink($file); return TRUE; } catch(Exception $e) { return FALSE; }
+	}//END function sunlink
 	/**
 	 * Check if a string contains one or more strings.
 	 *
@@ -229,9 +250,9 @@
 			case 'is_not0_numeric': return (is_numeric($array[$key]) && $array[$key]<>0);
 			case 'is_array': return is_array($array[$key]);
 			case 'is_notempty_array': return (is_array($array[$key]) && count($array[$key])>0);
-			case 'is_string': return is_string($array[$key]);
-			case 'is_notempty_string': return (is_string($array[$key]) && strlen($array[$key])>0);
-			case 'trim_is_notempty_string': return (is_string($array[$key]) && strlen(trim($array[$key]))>0);
+			case 'is_string': return (is_string($array[$key]) || is_numeric($array[$key]));
+			case 'is_notempty_string': return ((is_string($array[$key]) || is_numeric($array[$key])) && strlen($array[$key])>0);
+			case 'trim_is_notempty_string': return ((is_string($array[$key]) || is_numeric($array[$key])) && strlen(trim($array[$key]))>0);
 		  	default: return isset($array[$key]);
 		}//END switch
 	}//END function check_array_key
@@ -307,4 +328,41 @@
 		}//END switch
 		return ($val + $rem/($lscale*10));
 	}//END function custom_round
+	/**
+	 * Converts a date from unix timestamp to excel serial
+	 *
+	 * @param  mixd $date The date to be converted in unix timestamp format
+	 * or in string fromat (if string the $ts_input param must be set to FALSE)
+	 * @param  bool $ts_input Param indicating the format of the input date
+	 * (TRUE for unix timestamp or FALSE for string)
+	 * @param  string $timestamp The timestamp for the string data to be converted
+	 * @return int Returns the date in excel serial format
+	 */
+	function unixts2excel($date,$ts_input = TRUE,$timezone = NULL) {
+		if($ts_input) { return (is_numeric($date) ? (25569 + $date / 86400) : 1); }
+		try {
+			if(strlen($timezone)) {
+				$dt = new DateTime($date,new DateTimeZone($timezone));
+			} else {
+				$dt = new DateTime($date);
+			}//if(strlen($timezone))
+			return (25569 + $dt->getTimestamp() / 86400);
+		} catch(Exception $ne) {
+			return 1;
+		}//END try
+	}//END function unixts2excel
+	/**
+	 * Converts a date from excel serial to unix timestamp
+	 *
+	 * @param  mixd $date The date to be converted in excel serial format
+	 * @param  bool $ts_output Param indicating the format of the output date
+	 * (TRUE for unix timestamp or FALSE for string)
+	 * @param  string $format The format in which the string data will be outputed
+	 * @return int Returns the date in unix timestamp format
+	 * or in string fromat (if $ts_output param is set to FALSE)
+	 */
+	function excel2unixts($date,$ts_output = TRUE,$format = 'Y-m-d H:i:s') {
+		if($ts_output) { return (($date - 25569) * 86400); }
+		return date($format,(($date - 25569) * 86400));
+	}//END function excel2unixts
 ?>

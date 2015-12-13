@@ -6,13 +6,13 @@
  * License    LICENSE.txt
  *
  * @author     Hinter Software
- * @version    1.2.0
+ * @version    1.2.1
  */
 var PAFReq = {
 	procOn : 0,
 	reqSeparator : ']!PAF![',
 	actSeparator : ']!paf!s![',
-	oninit_func : 'DestroyCkEditor(window.name)',
+	oninit_func : '',
 	onPAFReqCompleteEvent : true,
 	updateProcOn : function(add_val,with_status) {
 		PAFReq.procOn += add_val;
@@ -56,7 +56,7 @@ var PAFReq = {
 			if(cobj && typeof(cobj)=='object') {
 				switch(cobj.type) {
 					case 'jqui':
-						// ToDo: de implementat jQueryUI dialog box
+						// TODO: de implementat jQueryUI dialog box
 						break;
 					default:
 						if(confirm(cobj.txt)!=true) { return; }
@@ -67,12 +67,8 @@ var PAFReq = {
 		var end_js_script = '';
 		if(js_script && js_script!='') {
 			var scripts = js_script.split('~');
-			if(scripts[0]) {
-				PAFReq.runScript(scripts[0]);
-			}//f(scripts[0])
-			if(scripts[1]) {
-				end_js_script = scripts[1];
-			}//if(scripts[1])
+			if(scripts[0]) { PAFReq.runScript(scripts[0]); }
+			if(scripts[1]) { end_js_script = scripts[1]; }
 		}//if(js_script && js_script!='')
 		PAFReq.updateProcOn(1,with_status);
 		if(encrypted==1) {
@@ -126,9 +122,7 @@ var PAFReq = {
 				if(actions[1]) { eval(actions[1]); }
 				if(js_script && js_script!='') { PAFReq.runScript(js_script); }
 				PAFReq.updateProcOn(-1,with_status);
-				if(PAFReq.onPAFReqCompleteEvent) {
-					$.event.trigger({ type: 'onPAFReqComplete' });
-				}//if(PAFReq.onPAFReqCompleteEvent)
+				if(PAFReq.onPAFReqCompleteEvent) { $.event.trigger({ type: 'onPAFReqComplete' }); }
 			}//if(req.readyState==4 && req.status==200)
 		};//END req.onreadystatechange
 	},//END sendRequest
