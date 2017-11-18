@@ -5,37 +5,41 @@
  * This contains a collection of php functions that extends standard php functions.
  * This functions are used by PAF (PHP AJAX Framework) and can olso be used in your project.
  *
- * @package    Hinter\PAF
- * @author     Hinter Software
- * @copyright  Copyright (c) 2004 - 2013 Hinter Software
- * @license    LICENSE.txt
- * @version    1.2.1
+ * @package    AdeoTEK\PAF
+ * @author     George Benjamin-Schonberger
+ * @copyright  Copyright (c) 2010 - 2018 AdeoTEK
+ * @license    LICENSE.md
+ * @version    1.5.0
  * @filesource
  */
 	/**
-	 * PAFReq_INIT_ALL constant definition (used as parameter in PAF class AReqInit method)
+	 * SQL-like coalesce function
+	 *
+	 * @param   mixed $arg Any number of arguments to be coalesced
+	 * @return  bool Returns first non-null argument
 	 */
-	define('PAFReq_INIT_ALL',1);
+    function coalesce() {
+        $params = func_get_args();
+		foreach($params as $p) { if(isset($p)) { return $p; } }
+		return NULL;
+    }//END function coalesce
 	/**
-	 * PAFReq_INIT_NO_JS constant definition (used as parameter in PAF class AReqInit method)
+	 * SQL-like coalesce function for strings
+	 * (empty string is considered null)
+	 *
+	 * @param   mixed [ $arg ] Any number of arguments to be coalesced
+	 * Obs. Each argument will be checked after trim
+	 * @return  bool Returns first non-null, non-empty argument
 	 */
-	define('PAFReq_INIT_NO_JS',0);
-	/**
-	 * PAF_DBG_DEBUG constant definition (used as parameter in PAF class debug methods)
-	 */
-	define('PAF_DBG_DEBUG','log');
-	/**
-	 * PAF_DBG_WARNING constant definition (used as parameter in PAF class debug methods)
-	 */
-	define('PAF_DBG_WARNING','warning');
-	/**
-	 * PAF_DBG_ERROR constant definition (used as parameter in PAF class debug methods)
-	 */
-	define('PAF_DBG_ERROR','error');
-	/**
-	 * PAF_DBG_INFO constant definition (used as parameter in PAF class debug methods)
-	 */
-	define('PAF_DBG_INFO','info');
+	function str_coalesce() {
+		$params = func_get_args();
+		foreach($params as $p) {
+			if(isset($p) && !is_string($p)) { continue; }
+			$val = isset($p) ? trim($p) : '';
+			if(strlen($val)) { return $p; }
+		}//END foreach
+		return NULL;
+	}//END function str_coalesce
 	/**
 	 * Echo string after applying htmlentities to it
 	 *
@@ -88,16 +92,21 @@
 	 *
 	 * @param   array $arr1 First array to merge
 	 * @param   array $arr2 Second array to merge
-	 * @param   bool $overwrite Overwrite sitch: TRUE with overwrite (default), FALSE without overwrite
+	 * @param   bool  $overwrite Overwrite sitch: TRUE with overwrite (default), FALSE without overwrite
+	 * @param   array $initial_arr2
 	 * @return  array|bool Returns the merged array or FALSE if one of the arr arguments is not an array
 	 */
-	function custom_array_merge($arr1,$arr2,$overwrite = TRUE) {
-		if(!is_array($arr1) || !is_array($arr2)) { return FALSE; }
+	function custom_array_merge($arr1,$arr2,$overwrite = TRUE,$initial_arr2 = NULL) {
+		if(!is_array($arr1) || !is_array($arr2)) { return NULL; }
+		if(!is_array($arr1)) { return $arr2; }
+		if(!is_array($arr2)) { return $arr1; }
 		$result = $arr1;
-		foreach ($arr2 as $k=>$v) {
+		foreach($arr2 as $k=>$v) {
+			$i_arr = is_array($initial_arr2) && array_key_exists($k,$initial_arr2) ? $initial_arr2[$k] : NULL;
+			if($i_arr && $v===$i_arr) { continue; }
 			if(array_key_exists($k,$result)) {
 				if(is_array($result[$k]) && is_array($v)) {
-					$result[$k] = custom_array_merge($result[$k],$v,$overwrite);
+					$result[$k] = custom_array_merge($result[$k],$v,$overwrite,$i_arr);
 				} else {
 					if($overwrite===TRUE) { $result[$k] = $v; }
 				}//if(is_array($result[$k]) && is_array($v))
@@ -105,24 +114,27 @@
 				$result[$k] = $v;
 			}//if(array_key_exists($k,$result))
 		}//END foreach
+		if(is_array($initial_arr2) && count($initial_arr2)) {
+			foreach(array_diff_key($initial_arr2,$arr2) as $k=>$v) { unset($result[$k]); }
+		}//if(is_array($initial_arr2) && count($initial_arr2))
 		return $result;
 	}//END function custom_array_merge
 	/**
 	 * This returns the element from certain level of the backtrace stack.
 	 *
+	 * @param   integer $step The backtrace step index to be returned, starting from 0 (default 1)
 	 * @param   string $param Type of the return.
 	 * Values can be: "function" and "class" for returning full array of the specified step
 	 * or "array" and empty string for returning an array containing only the name of the function/method
 	 * and the  class name (if there is one) of the specified step.
-	 * @param   integer $step The backtrace step index to be returned, starting from 0 (default 1)
 	 * @return  array The full array or an array containing function/method and class names from the specified stop.
 	 */
-	function call_back_trace($param = 'function',$step = 1) {
+	function call_back_trace($step = 1,$param = 'function') {
 		$result = array();
 		$trdata = debug_backtrace();
 		if(!is_numeric($step) || $step<0 || !array_key_exists($step,$trdata)) { return $result; }
 		$lstep = $step + 1;
-		switch($param) {
+		switch(strtolower($param)) {
 			case 'function':
 			case 'class':
 				$result = array_key_exists($param,$trdata[$lstep]) ? $trdata[$lstep][$param] : '';
@@ -134,11 +146,69 @@
 						'class'=>(array_key_exists('class',$trdata[$lstep]) ? $trdata[$lstep]['class'] : ''),
 					);
 				break;
+			case 'full':
+				$result = $trdata[$lstep];
+				break;
 			default:
 				break;
-		}//switch($param)
+		}//END switch
 		return $result;
 	}//END function call_back_trace
+	/**
+	 * Convert string from unknown character set to UTF-8
+	 *
+	 * @param      string $value The string to be converted
+	 * @return     string Returns the converted string
+	 * @access     public
+	 */
+	function custom_utf8_encode($value) {
+		$enc = mb_detect_encoding($value,mb_detect_order(),TRUE);
+		if(strtoupper($enc)=='UTF-8') { return $value; }
+		return iconv($enc,'UTF-8',$value);
+	}//END function custom_utf8_encode
+	/**
+	 * String explode function based on standard php explode function.
+	 * Explode on two levels to generate a table-like array.
+	 *
+	 * @param   string $str The string to be exploded.
+	 * @param   string $rsep The string used as row separator.
+	 * @param   string $csep The string used as column separator.
+	 * @param   string $ksep The string used as column key-value separator.
+	 * @return  array The exploded multi-level array.
+	 */
+	function explode_to_table($str,$rsep = '|:|',$csep = ']#[',$ksep = NULL,$keys_case = CASE_LOWER) {
+		$result = [];
+		if(!is_string($str) || !strlen($str) || !is_string($rsep) || !strlen($rsep)
+				|| (isset($csep) && (!is_string($csep) || !strlen($csep)))
+			) { return $result; }
+		foreach(explode($rsep,$str) as $row) {
+			if(!strlen($row)) { continue; }
+			if(!$csep) {
+				$result[] = $row;
+				continue;
+			}//if(!$csep)
+			$r_arr = [];
+			foreach(explode($csep,$row) as $col) {
+				if(!strlen($col)) { continue; }
+				if(!is_string($ksep) || !strlen($ksep)) {
+					$r_arr[] = $col;
+					continue;
+				}//if(!is_string($ksep) || !strlen($ksep))
+				$c_kv = explode($ksep,$col);
+				if(count($c_kv)!=2) {
+					$r_arr[] = $col;
+				} else {
+					if(is_numeric($keys_case)) {
+						$r_arr[($keys_case==CASE_UPPER ? strtoupper($c_kv[0]) : strtolower($c_kv[0]))] = $c_kv[1];
+					} else {
+						$r_arr[$c_kv[0]] = $c_kv[1];
+					}//if(is_numeric($keys_case))
+				}//if(count($c_kv)!=2)
+			}//END foreach
+			$result[] = $r_arr;
+		}//END foreach
+		return $result;
+	}//END function explode_to_table
 	/**
 	 * String explode function based on standard php explode function.
 	 * After exploding the string, for each non-numeric element, all leading and trailing spaces will be trimmed.
@@ -180,16 +250,17 @@
 	 * standard php function, otherwise just the first letter in string will be changed to upper.
 	 * @return  string The processed string.
 	 */
-	function custom_ucfirst($str,$all = TRUE,$settolower = TRUE) {
+	function custom_ucfirst($str,$all = TRUE,$settolower = TRUE,$delimiter = ' ',$remove_delimiter = FALSE) {
+		if(!is_string($str) || !strlen($str)) { return NULL; }
 		if($all) {
-			$str_arr = explode(' ',(is_string($str) ? $str : ''));
-			for($i=0; $i<count($str_arr); $i++) {
-				$str_arr[$i] = ucfirst(($settolower ? strtolower($str_arr[$i]) : $str_arr[$i]));
-			}//for($i=0; $i<count($str_arr); $i++)
-			return implode(' ',$str_arr);
+			$delimiter = is_string($delimiter) && strlen($delimiter) ? $delimiter : ' ';
+			$str_arr = explode($delimiter,trim(($settolower ? strtolower($str) : $str)));
+			$result = '';
+			foreach($str_arr as $stri) { $result .= (strlen($result) && !$remove_delimiter ? $delimiter : '').ucfirst($stri); }
 		} else {
-			return ucfirst(($settolower ? strtolower($str) : $str));
+			$result = ucfirst(trim(($settolower ? strtolower($str) : $str)));
 		}//if($all)
+		return $result;
 	}//END function custom_ucfirst
 	/**
 	 * Replaces all url not accepted characters with minus character (-)
@@ -226,35 +297,102 @@
 		return floatval($lvar);
 	}//END function custom_floatval
 	/**
+	 * Validate variable value
+	 *
+	 * @param   mixed $value Variable to be validated
+	 * @param   mixed $def_value Default value to be returned if param is not validated
+	 * @param   string $validation Validation type
+	 * @param   bool $checkonly Flag for setting validation as check only
+	 * @return  mixed Returns param value or default value if not validated
+	 * or TRUE/FALSE if $checkonly is TRUE
+	 */
+	function validate_param($value,$def_value = NULL,$validation = NULL,$checkonly = FALSE) {
+		if(!is_string($validation) || !strlen($validation)) {
+			if($checkonly) { return isset($value); }
+			return (isset($value) ? $value : $def_value);
+		}//if(!is_string($validation) || !strlen($validation))
+		if($checkonly) {
+			switch(strtolower($validation)){
+				case 'true':
+					return ($value ? TRUE : FALSE);
+				case 'is_object':
+					return is_object($value);
+				case 'is_numeric':
+					return is_numeric($value);
+				case 'is_integer':
+					return (is_numeric($value) && is_integer($value*1));
+				case 'is_float':
+					return (is_numeric($value) && is_float($value*1));
+				case 'is_not0_numeric':
+					return (is_numeric($value) && $value<>0);
+				case 'is_not0_integer':
+					return (is_numeric($value) && is_integer($value*1) && $value<>0);
+				case 'is_not0_float':
+					return (is_numeric($value) && is_float($value*1) && $value<>0);
+				case 'is_array':
+					return is_array($value);
+				case 'is_notempty_array':
+					return (is_array($value) && count($value));
+				case 'is_string':
+					return (is_string($value) || is_numeric($value));
+				case 'is_notempty_string':
+					return ((is_string($value) || is_numeric($value)) && strlen($value));
+				case 'trim_is_notempty_string':
+					return ((is_string($value) || is_numeric($value)) && strlen(trim($value)));
+				case 'isset':
+				case 'bool':
+			    default: return isset($value);
+			}//END switch
+		}//if($checkonly)
+		switch(strtolower($validation)){
+			case 'true':
+				return ($value ? $value : $def_value);
+			case 'is_object':
+				return (is_object($value) ? $value : $def_value);
+			case 'is_numeric':
+				return (is_numeric($value) ? ($value+0) : $def_value);
+			case 'is_integer':
+				return (is_numeric($value) ? intval($value) : $def_value);
+			case 'is_float':
+				return (is_numeric($value) ? floatval($value) : $def_value);
+			case 'is_not0_numeric':
+				return (is_numeric($value) && $value<>0 ? ($value+0) : $def_value);
+			case 'is_not0_integer':
+				return (is_numeric($value) && intval($value)<>0 ? intval($value) : $def_value);
+			case 'is_not0_float':
+				return (is_numeric($value) && $value<>0 ? floatval($value) : $def_value);
+			case 'is_array':
+				return is_array($value) ? $value : $def_value;
+			case 'is_notempty_array':
+				return (is_array($value) && count($value) ? $value : $def_value);
+			case 'is_string':
+				return (is_string($value) || is_numeric($value) ? strval($value) : $def_value);
+			case 'is_notempty_string':
+				return ((is_string($value) || is_numeric($value)) && strlen($value) ? strval($value) : $def_value);
+			case 'trim_is_notempty_string':
+				return ((is_string($value) || is_numeric($value)) && strlen(trim($value)) ? strval($value) : $def_value);
+			case 'bool':
+				return (isset($value) ? (strtolower($value)=='true' ? TRUE : (strtolower($value)=='false' ? FALSE : ($value ? TRUE : FALSE))) : $def_value);
+			case 'isset':
+		  	default:
+		  	    return (isset($value) ? $value : $def_value);
+		}//END switch
+	}//END function validate_param
+	/**
 	 * Checks if a key exists in an array and validates its value
 	 * (if validation is set)
 	 *
 	 * @param   mixed $key Key to be checked
 	 * @param   array $array Array to be searched (passed by reference)
 	 * @param   string $validation Validation type
-	 * - NULL or empty string = no validation
-	 * - 'true' = checks if value is not FALSE (generic)
-	 * - 'isset' = checks if value is set (not NULL)
-	 * - 'is_numeric' = checks if value is a number
-	 * - 'is_array' = checks if value is an array
+	 * (as implemented in validate_param function)
 	 * @return  bool Returns TRUE if $key exists in the $array or FALSE otherwise.
 	 * If $validation is not NULL, result is TRUE only if $array[$key] is validated
 	 */
 	function check_array_key($key,&$array,$validation = NULL) {
 		if(!is_array($array) || is_null($key) || !array_key_exists($key,$array)){ return FALSE; }
 		if(!is_string($validation)){ return TRUE; }
-		switch(strtolower($validation)){
-			case 'true': return ($array[$key] ? TRUE : FALSE);
-			case 'isset': return isset($array[$key]);
-			case 'is_numeric': return is_numeric($array[$key]);
-			case 'is_not0_numeric': return (is_numeric($array[$key]) && $array[$key]<>0);
-			case 'is_array': return is_array($array[$key]);
-			case 'is_notempty_array': return (is_array($array[$key]) && count($array[$key])>0);
-			case 'is_string': return (is_string($array[$key]) || is_numeric($array[$key]));
-			case 'is_notempty_string': return ((is_string($array[$key]) || is_numeric($array[$key])) && strlen($array[$key])>0);
-			case 'trim_is_notempty_string': return ((is_string($array[$key]) || is_numeric($array[$key])) && strlen(trim($array[$key]))>0);
-		  	default: return isset($array[$key]);
-		}//END switch
+		return validate_param($array[$key],NULL,$validation,TRUE);
 	}//END function check_array_key
 	/**
 	 * Extracts a param value from a params array
@@ -264,15 +402,16 @@
 	 * @param   string $key Key of the param to be returned
 	 * @param   mixed $def_value Default value to be returned if param is not validated
 	 * @param   string $validation Validation type
-	 * (as implemented in check_array_key function)
+	 * (as implemented in validate_param function)
 	 * @return  mixed Returns param value or default value if not validated
 	 */
 	function get_array_param(&$params,$key,$def_value = NULL,$validation = NULL,$sub_key = NULL) {
-		if(strlen($sub_key)) {
-			if(!is_array($params) || !array_key_exists($key,$params)) { return $def_value; }
-			return check_array_key($sub_key,$params[$key],$validation) ? ($validation=='bool' ? (strtolower($params[$key][$sub_key])=='true' ? TRUE : (strtolower($params[$key][$sub_key])=='false' ? FALSE : ($params[$key][$sub_key] ? TRUE : FALSE))) : $params[$key][$sub_key]) : $def_value;
-		}//if(strlen($sub_key))
-		return check_array_key($key,$params,$validation) ? ($validation=='bool' ? (strtolower($params[$key])=='true' ? TRUE : (strtolower($params[$key])=='false' ? FALSE : ($params[$key] ? TRUE : FALSE))) : $params[$key]) : $def_value;
+		if(!is_array($params) || is_null($key) || !array_key_exists($key,$params)){ return $def_value; }
+		if(!isset($sub_key) || (!is_string($sub_key) && !is_numeric($sub_key))) {
+			return validate_param($params[$key],$def_value,$validation);
+		}//if(!isset($sub_key) || (!is_string($sub_key) && !is_numeric($sub_key)))
+		if(!is_array($params[$key]) || !array_key_exists($sub_key,$params[$key])){ return $def_value; }
+		return validate_param($params[$key][$sub_key],$def_value,$validation);
 	}//END function get_array_param
 	/**
 	 * Converts a hex color to RGB
@@ -306,7 +445,6 @@
 	 * @return numeric Returns the rounded number or FALSE on wrong params
 	 */
 	function custom_round($value,$scale,$step = 1,$mode = 0) {
-		global $xsession;
 		if(!is_numeric($value) || !is_numeric($scale)) { return FALSE; }
 		$lstep = (!is_numeric($step) || $step<=0 || $step>9) ? 1 : intval($step);
 		$lscale = pow(10,$scale-1);
@@ -331,38 +469,211 @@
 	/**
 	 * Converts a date from unix timestamp to excel serial
 	 *
-	 * @param  mixd $date The date to be converted in unix timestamp format
-	 * or in string fromat (if string the $ts_input param must be set to FALSE)
-	 * @param  bool $ts_input Param indicating the format of the input date
-	 * (TRUE for unix timestamp or FALSE for string)
-	 * @param  string $timestamp The timestamp for the string data to be converted
+	 * @param  mixed   $date The date to be converted in unix time stamp format
+	 * or in string format (if string the $ts_input param must be set to FALSE)
+	 * @param  string $timezone The time zone for the string data to be converted
+	 * @param  string $new_timezone User's time zone
 	 * @return int Returns the date in excel serial format
 	 */
-	function unixts2excel($date,$ts_input = TRUE,$timezone = NULL) {
-		if($ts_input) { return (is_numeric($date) ? (25569 + $date / 86400) : 1); }
+	function unixts2excel($date,$timezone = NULL,$new_timezone = NULL) {
+		if(!$date) { return NULL; }
 		try {
-			if(strlen($timezone)) {
-				$dt = new DateTime($date,new DateTimeZone($timezone));
+			if(is_numeric($date)) {
+				$dt = strlen($timezone) ? new DateTime(date('Y-m-d H:i:s',$date),new DateTimeZone($timezone)) : new DateTime(date('Y-m-d H:i:s',$date));
+			} elseif(is_object($date)) {
+				$dt = $date;
 			} else {
-				$dt = new DateTime($date);
+				$dt = strlen($timezone) ? new DateTime($date,new DateTimeZone($timezone)) : new DateTime($date);
 			}//if(strlen($timezone))
-			return (25569 + $dt->getTimestamp() / 86400);
+			if(strlen($new_timezone) && $new_timezone!==$timezone) {
+				$dt->setTimezone(new DateTimeZone($new_timezone));
+			}//if(strlen($new_timezone) && $new_timezone!==$timezone)
+			$result = (25569.083333333 + ($dt->getTimestamp() + 3600) / 86400);
+			return $result;
 		} catch(Exception $ne) {
-			return 1;
+			return NULL;
 		}//END try
 	}//END function unixts2excel
 	/**
-	 * Converts a date from excel serial to unix timestamp
+	 * Converts a date from excel serial to unix time stamp
 	 *
-	 * @param  mixd $date The date to be converted in excel serial format
-	 * @param  bool $ts_output Param indicating the format of the output date
-	 * (TRUE for unix timestamp or FALSE for string)
+	 * @param  numeric $date The date to be converted from excel serial format
+	 * @param  string $timezone User's time zone
+	 * @param  string $new_timezone The time zone for the string data to be converted
 	 * @param  string $format The format in which the string data will be outputed
-	 * @return int Returns the date in unix timestamp format
-	 * or in string fromat (if $ts_output param is set to FALSE)
+	 * If NULL or empty, numeric time stamp is returned
+	 * @return int Returns the date as string or or unix time stamp
 	 */
-	function excel2unixts($date,$ts_output = TRUE,$format = 'Y-m-d H:i:s') {
-		if($ts_output) { return (($date - 25569) * 86400); }
-		return date($format,(($date - 25569) * 86400));
+	function excel2unixts($date,$timezone = NULL,$new_timezone = NULL,$format = 'Y-m-d H:i:s') {
+		if(!is_numeric($date)) { return NULL; }
+		try {
+			$ldate = date('Y-m-d H:i:s',(round(($date - 25569.083333333) * 86400) - 3600));
+			$dt = strlen($timezone) ? new DateTime($ldate,new DateTimeZone($timezone)) : new DateTime($ldate);
+			if(strlen($new_timezone) && $new_timezone!==$timezone) {
+				$dt->setTimezone(new DateTimeZone($new_timezone));
+			}//if(strlen($new_timezone) && $new_timezone!==$timezone)
+			if(!$format || !strlen($format)) {
+				return $dt->getTimestamp();
+			}//if(!$format || !strlen($format))
+			return $dt->format($format);
+		} catch(Exception $e) {
+			return NULL;
+		}//END try
 	}//END function excel2unixts
+	/**
+	 * Gets the Unix timestamp for a date/time with an optional timezone
+	 *
+	 * @param  string $date The string representing a date/time in a PHP accepted format
+	 * (if NULL or 'now' is passed, the function will return the current Unix timestamp)
+	 * @param  string $timezone Optional parameter representing the timezone string
+	 * @param  string $new_timezone User's time zone (optional)
+	 * @return int The Unix timestamp
+	 */
+	function get_timestamp($date,$timezone = NULL,$new_timezone = NULL) {
+		try {
+			$dt = new DateTime($date,new DateTimeZone(strlen($timezone) ? $timezone : XSession::$server_timezone));
+			if(strlen($new_timezone)) {
+				$dt->setTimezone(new DateTimeZone($new_timezone));
+			}//if(strlen($new_timezone))
+			return $dt->getTimestamp();
+		} catch(Exception $e) {
+			return NULL;
+		}//END try
+	}//END function get_timestamp
+	/**
+	 * Returns a string containing a formated number
+	 *
+	 * @param  number $value The number to be formated
+	 * @param  string $format The format string in NETopes style
+	 * (NETopes format: "[number of decimals]|[decimal separator|[group separator]|[sufix]"
+	 * @return string Returns the formated number or NULL in case of errors
+	 */
+	function custom_number_format($value,$format = '0|||') {
+		if(!is_numeric($value) || !is_string($format) || !strlen($format)) { return NULL; }
+		$f_arr = explode('|',$format);
+		if(!is_array($f_arr) || count($f_arr)!=4) { return NULL; }
+		return number_format($value,$f_arr[0],$f_arr[1],$f_arr[2]).$f_arr[3];
+	}//END function custom_number_format
+	/**
+	 * Returns an array of files from the provided path and all its sub folders.
+	 * For each file the value is an array with the following structure:
+	 * array(
+	 * 		'name'=>(string) File name (with extension),
+	 * 		'path'=>(string) Full path of the file (without file name),
+	 * 		'ext'=>(string) File extension (without "." character)
+	 * )
+	 *
+	 * @param  string $path The starting path for the search
+	 * @param  array  $extensions An array of accepted file extensions (without the "." character)
+	 * or NULL for all
+	 * @param  string $exclude A regex string for filtering files and folders names with preg_match function
+	 * or NULL for all
+	 * @param  int    $sort Sort type in php scandir() format (default SCANDIR_SORT_ASCENDING)
+	 * @param  array  $dir_exclude An array of folders to be excluded (at any level of the tree)
+	 * @return array  Returns an array of found files
+	 */
+	function get_files_recursive($path,$extensions = NULL,$exclude = NULL,$sort = SCANDIR_SORT_ASCENDING,$dir_exclude = NULL) {
+		if(!$path || !file_exists($path)) { return FALSE; }
+		$result = array();
+		foreach(scandir($path,$sort) as $v) {
+			if($v=='.' || $v=='..' || (strlen($exclude) && preg_match($exclude,$v))) { continue; }
+			if(is_dir($path.'/'.$v)) {
+				if(is_array($dir_exclude) && count($dir_exclude) && in_array($v,$dir_exclude)) { continue; }
+				$tmp_result = get_files_recursive($path.'/'.$v,$extensions,$exclude,$sort,$dir_exclude);
+				if(is_array($tmp_result)) { $result = array_merge($result,$tmp_result); }
+			} else {
+				$ext = strrpos($v,'.')===FALSE || strrpos($v,'.')==0 ? '' : substr($v,strrpos($v,'.')+1);
+				if(is_array($extensions) && !in_array($ext,$extensions)) { continue; }
+				$result[] = array('name'=>$v,'path'=>$path,'ext'=>$ext);
+			}//if(is_dir($path.'/'.$v))
+		}//END foreach
+		return $result;
+	}//END function get_files_recursive
+	/**
+	 * Converts a string of form [abcd_efgh_ijk] into a camel case form [AbcdEfghIjk]
+	 *
+	 * @param  string $string String to be converted
+	 * @param  bool   $lower_first Flag to indicate if the first char should be lower case
+	 * @return string Returns the string in camel case format or NULL on error
+	 */
+	function convert_to_camel_case($string,$lower_first = FALSE) {
+		$result = custom_ucfirst($string,TRUE,TRUE,'_',TRUE);
+		return ($lower_first ? lcfirst($result) : $result);
+	}//END function convert_to_camel_case
+	/**
+	 * Get file mime type by extension
+	 *
+	 * @param  string $filename Target file name (with or without path)
+	 * @return string Returns the mime type identified by file extension
+	 */
+	function get_file_mime_type_by_extension($filename) {
+		$standard_mime_types = array(
+			    'pdf'=>'application/pdf',
+			    'txt'=>'text/plain',
+			    'html'=>'text/html',
+			    'htm'=>'text/html',
+			    'exe'=>'application/octet-stream',
+			    'zip'=>'application/zip',
+			    'doc'=>'application/msword',
+			    'xls'=>'application/vnd.ms-excel',
+			    'xlsx'=>'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+			    'ppt'=>'application/vnd.ms-powerpoint',
+			    'gif'=>'image/gif',
+			    'png'=>'image/png',
+			    'jpeg'=>'image/jpg',
+			    'jpg'=> 'image/jpg',
+			    'php'=>'text/plain',
+			    'apk'=>'application/octet-stream',
+			    'log'=>'text/plain',
+			);
+		$fileext = substr($filename,strrpos($filename,'.')+1);
+		return (array_key_exists($fileext,$standard_mime_types) ? $standard_mime_types[$fileext] : 'application/force-download');
+	}//END function get_file_mime_type_by_extension
+
+	function custom_nl2br($string) {
+		if(!is_string($string)) { return NULL; }
+		return nl2br(str_replace("\t",'&nbsp;&nbsp;&nbsp;',$string));
+	}//END function custom_nl2br
+
+	function custom_br2nl($string) {
+		if(!is_string($string)) { return NULL; }
+		return str_replace('&nbsp;&nbsp;&nbsp;',"\t",str_replace(array('<br/>','<br />','<br>'),"\n",$string));
+	}//END function custom_br2nl
+
+	function safe_json_encode($data,$for_html = TRUE) {
+		$result = json_encode($data);
+		if($for_html) {
+			$result = str_replace("\t",'&nbsp;&nbsp;&nbsp;&nbsp;',$result);
+			$result = nl2br($result);
+		} else {
+			$result = str_replace(array("\r\n","\r","\n","\t"),' ',$result);
+		}//if($for_html)
+		return $result;
+	}//END function safe_json_encode
+
+	function vprint($var,$html_entities = FALSE,$return = FALSE,$utf8encode = TRUE) {
+		if(is_string($var)) { $result = $var; }
+		else { $result = print_r($var,TRUE); }
+		if($html_entities) {
+			$result = htmlentities($result,NULL,($utf8encode ? 'utf-8' : NULL));
+		} else {
+			if($utf8encode) { $result = utf8_encode($result); }
+			$result = '<pre>'.$result.'</pre>';
+		}//if($html_entities)
+		if($return===TRUE) { return $result; }
+		echo $result;
+	}//END function vprint
+
+	function array2string($array,$separator = '|',$parent = NULL) {
+		if(!is_array($array) || !count($array)) { return FALSE; }
+		$result = '';
+		foreach($array as $k=>$v) {
+		    if(is_array($v)) {
+		    	$result .= array2string($v,$separator,$parent.(strlen($parent) ? '/' : '').$k);
+		    } else {
+		    	$result .= $k.$separator."'{$v}'".$separator.$parent.$separator.$separator."\n";
+		    }//if(is_array($v))
+		}//END foreach
+		return $result;
+	}//END function array2string
 ?>

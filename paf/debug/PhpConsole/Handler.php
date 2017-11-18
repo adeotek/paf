@@ -170,14 +170,14 @@ class Handler {
 	 * @param string|null $file
 	 * @param int|null $line
 	 * @param null $context
-	 * @param int $skipCallsLevel Number of proxy methods between original "error handler method" and this method call
+	 * @param int|array $ignoreTraceCalls Ignore tracing classes by name prefix `array('PhpConsole')` or fixed number of calls to ignore
 	 */
-	public function handleError($code = null, $text = null, $file = null, $line = null, $context = null, $skipCallsLevel = 0) {
-		if(!$this->isStarted || error_reporting() === 0 || $this->isHandlingDisabled()) {
+	public function handleError($code = null, $text = null, $file = null, $line = null, $context = null, $ignoreTraceCalls = 0) {
+		if(!$this->isStarted || error_reporting() === 0 || $this->isHandlingDisabled() || ($this->errorsHandlerLevel && !($code & $this->errorsHandlerLevel))) {
 			return;
 		}
 		$this->onHandlingStart();
-		$this->connector->getErrorsDispatcher()->dispatchError($code, $text, $file, $line, $skipCallsLevel + 1);
+		$this->connector->getErrorsDispatcher()->dispatchError($code, $text, $file, $line, is_numeric($ignoreTraceCalls) ? $ignoreTraceCalls + 1 : $ignoreTraceCalls);
 		if($this->oldErrorsHandler && $this->callOldHandlers) {
 			call_user_func_array($this->oldErrorsHandler, array($code, $text, $file, $line, $context));
 		}
@@ -208,9 +208,9 @@ class Handler {
 
 	/**
 	 * Handle exception object
-	 * @param \Exception $exception
+	 * @param \Exception|\Throwable $exception
 	 */
-	public function handleException(\Exception $exception) {
+	public function handleException($exception) {
 		if(!$this->isStarted || $this->isHandlingDisabled()) {
 			return;
 		}
@@ -220,6 +220,9 @@ class Handler {
 			if($this->oldExceptionsHandler && $this->callOldHandlers) {
 				call_user_func($this->oldExceptionsHandler, $exception);
 			}
+		}
+		catch(\Throwable $internalException) {
+			$this->handleException($internalException);
 		}
 		catch(\Exception $internalException) {
 			$this->handleException($internalException);
@@ -231,11 +234,11 @@ class Handler {
 	 * Handle debug data
 	 * @param mixed $data
 	 * @param string|null $tags Tags separated by dot, e.g. "low.db.billing"
-	 * @param int $skipTraceCalls Number of proxy methods between original "debug method call" and this method call
+	 * @param int|array $ignoreTraceCalls Ignore tracing classes by name prefix `array('PhpConsole')` or fixed number of calls to ignore
 	 */
-	public function debug($data, $tags = null, $skipTraceCalls = 0) {
+	public function debug($data, $tags = null, $ignoreTraceCalls = 0) {
 		if($this->connector->isActiveClient()) {
-			$this->connector->getDebugDispatcher()->dispatchDebug($data, $tags, $skipTraceCalls + 1);
+			$this->connector->getDebugDispatcher()->dispatchDebug($data, $tags, is_numeric($ignoreTraceCalls) ? $ignoreTraceCalls + 1 : $ignoreTraceCalls);
 		}
 	}
 }

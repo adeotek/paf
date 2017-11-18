@@ -6,30 +6,38 @@
  * Edit only values for the PAFConfig class properties
  * and the User global required files section
  *
- * @package    Hinter\PAF
- * @author     Hinter Software
- * @copyright  Copyright (c) 2004 - 2013 Hinter Software
- * @license    LICENSE.txt
- * @version    1.2.0
+ * @package    AdeoTEK\PAF
+ * @author     George Benjamin-Schonberger
+ * @copyright  Copyright (c) 2010 - 2018 AdeoTEK
+ * @license    LICENSE.md
+ * @version    1.5.0
  * @filesource
  */
+	if(!defined('_X_VREQ') || _X_VREQ!==TRUE) { die('Invalid request!'); }
 	/** Require files for application startup */
-	$app_absolute_path = PAFConfig::ExtractAbsolutePath();
-	require_once($app_absolute_path.PAFConfig::$paf_path.'helpers.php');
-	require_once($app_absolute_path.PAFConfig::$paf_path.'GibberishAES.php');
-	require_once($app_absolute_path.PAFConfig::$paf_path.'class.applogger.php');
-	require_once($app_absolute_path.PAFConfig::$paf_path.'class.paf.php');
-	require_once($app_absolute_path.PAFConfig::$paf_path.'class.pafreq.php');
+	require_once(_X_ROOT_PATH.PAFConfig::GetPafPath().'/helpers.php');
+	if(version_compare(PHP_VERSION,'7.0.0')<0) {
+		// require_once(_X_ROOT_PATH.PAFConfig::GetPafPath().'/random_compat.phar');
+		require_once(_X_ROOT_PATH.PAFConfig::GetPafPath().'/GibberishAES_5x.php');
+	} else {
+	require_once(_X_ROOT_PATH.PAFConfig::GetPafPath().'/GibberishAES.php');
+	}//if(version_compare(PHP_VERSION,'7.0.0')<0)
+	require_once(_X_ROOT_PATH.PAFConfig::GetPafPath().'/AException.php');
+	require_once(_X_ROOT_PATH.PAFConfig::GetPafPath().'/ADebugger.php');
+	require_once(_X_ROOT_PATH.PAFConfig::GetPafPath().'/PAFApp.php');
+	require_once(_X_ROOT_PATH.PAFConfig::GetPafPath().'/ARequest.php');
 	/**
-	 * User global required files load
+	 * User global constants and required files load
 	 *
-	 * Enter here all global requires needed for your applications and they will be loaded automaticly at startup
+	 * Enter here all global requires needed for your applications and they will be loaded automatically at startup
 	 */
 
-	 
-	 
-	 //END User global required files load
+	//END User global required files load
 	//END Require files for application startup
+	/** Register class autoload custom method */
+	if(!defined('X_REGISTER_AUTOLOADER') || X_REGISTER_AUTOLOADER!==FALSE) {
+		spl_autoload_register('XSession::XAutoload',TRUE,TRUE);
+	}//if(!defined('X_REGISTER_AUTOLOADER') || X_REGISTER_AUTOLOADER!==FALSE)
 	/**
 	 * PAFConfig is the configuration holder for PAF
 	 *
@@ -37,29 +45,21 @@
 	 * Most of the properties are public. Those that are not, either have Getter/Setter function
 	 * or can not be changed during run.
 	 *
- 	 * @package    Hinter\PAF
+ 	 * @package    AdeoTEK\PAF
 	 * @access     public
 	 * @abstract
 	 */
-	abstract class PAFConfig {
+	abstract class PAFAppConfig {
 //START Custom configuration params
-
-
 
 //END Custom configuration params
 //START Basic configuration
-		/**
-		 * @var        string Relative path to this file (Linux style)
-		 * @access     public
-		 * @static
-		 */
-		public static $paf_config_path = '/';
 		/**
 		 * @var        integer Request max duration in seconds
 		 * @access     public
 		 * @static
 		 */
-		public static $request_time_limit = 1200;
+		public static $request_time_limit = 1800;
 		/**
 		 * @var        string Server timezone (php timezone accepted value)
 		 * @access     public
@@ -71,25 +71,43 @@
 		 * @access     public
 		 * @static
 		 */
-		public static $bufferd_output = FALSE;
+		public static $bufferd_output = TRUE;
 		/**
 		 * @var        boolean Use internal cache system
 		 * @access     public
 		 * @static
 		 */
-		public static $cache = FALSE;
+		public static $x_cache = FALSE;
+		/**
+		 * @var    boolean Use database internal cache system
+		 * @access public
+		 * @static
+		 */
+		public static $x_db_cache = FALSE;
+		/**
+		 * @var    boolean Use Redis storage for internal cache system
+		 * @access public
+		 * @static
+		 */
+		public static $x_cache_redis = FALSE;
+		/**
+		 * @var    string Cache files path (absolute)
+		 * @access public
+		 * @static
+		 */
+		public static $x_cache_path = NULL;
 		/**
 		 * @var        boolean PAF cached calls separator
 		 * @access     public
 		 * @static
 		 */
-		public static $cache_separator = '![PAFC[';
+		public static $x_cache_separator = '![PAFC[';
 		/**
 		 * @var        boolean PAF cached arguments separator
 		 * @access     public
 		 * @static
 		 */
-		public static $cache_arg_separator = ']!PAFC!A![';
+		public static $x_cache_arg_separator = ']!PAFC!A![';
 		/**
 		 * @var        boolean Cookie login on/off
 		 * @access     public
@@ -105,11 +123,41 @@
 //END Basic configuration
 //START Session configuration
 		/**
+		 * @var        string Session name (NULL for default)
+		 * @access     public
+		 * @static
+		 */
+		public static $x_session_name = 'PHPSESSIONID';
+		/**
+		 * @var        boolean Use session splitting by window.name or not
+		 * @access     public
+		 * @static
+		 */
+		public static $split_session_by_page = TRUE;
+		/**
+		 * @var        boolean Use asynchronous session read/write
+		 * @access     public
+		 * @static
+		 */
+		public static $async_session = TRUE;
+		/**
 		 * @var        integer Session timeout in seconds
 		 * @access     public
 		 * @static
 		 */
 		public static $session_timeout = 1800;
+		/**
+		 * @var        boolean Use memcached for session storage
+		 * @access     public
+		 * @static
+		 */
+		public static $session_redis = FALSE;
+		/**
+		 * @var        string Memcache server connection string (host_name:port)
+		 * @access     public
+		 * @static
+		 */
+		public static $session_redis_server = 'tcp://127.0.0.1:6379?timeout=1&weight=1&database=0';
 		/**
 		 * @var        boolean Use memcached for session storage
 		 * @access     public
@@ -127,27 +175,45 @@
 		 * @access     public
 		 * @static
 		 */
-		public static $session_file_path = '/tmp';
+		public static $session_file_path = 'tmp';
 		/**
 		 * @var    string Verification key for session data
 		 * @access protected
 		 * @static
 		 */
-		protected static $session_key = 'a1b2c3d4';
+		protected static $session_key = '14159265';
+		/**
+		 * @var    int Session array keys case: CASE_LOWER/CASE_UPPER or NULL for no case modification
+		 * @access protected
+		 * @static
+		 */
+		protected static $session_keys_case = CASE_LOWER;
 //END Session configuration
 //START PAF configuration
+		/**
+		 * @var        string PAF folder location ("public" or "application")
+		 * @access     public
+		 * @static
+		 */
+		public static $paf_location = 'public';
 		/**
 		 * @var        string Relative path to PAF class (linux style)
 		 * @access     public
 		 * @static
 		 */
-		public static $paf_path = '/paf/';
+		public static $paf_path = '/paf';
 		/**
-		 * @var        string Target file for PAF post (relative path + name)
+		 * @var        string Relative path to PAF javascript file (linux style)
 		 * @access     public
 		 * @static
 		 */
-		public static $paf_target = '/atarget.php';
+		public static $paf_js_path = '/paf';
+		/**
+		 * @var        string Target file for PAF post (relative path from public folder + name)
+		 * @access     public
+		 * @static
+		 */
+		public static $paf_target = 'aindex.php';
 		/**
 		 * @var        string PAF session key
 		 * @access     protected
@@ -159,7 +225,7 @@
 		 * @access     protected
 		 * @static
 		 */
-		protected static $paf_class_name = 'XPAF';
+		protected static $paf_class_name = 'PAFRequest';
 		/**
 		 * @var        string PAF implementing class file (relative path + name)
 		 * @access     protected
@@ -171,13 +237,19 @@
 		 * @access     protected
 		 * @static
 		 */
-		protected static $paf_class_file_path = '/';
+		protected static $paf_class_file_path = '';
 		/**
 		 * @var        string PAF implementing class file name
 		 * @access     protected
 		 * @static
 		 */
-		protected static $paf_class_file_name = 'PafDispatcher.php';
+		protected static $paf_class_file_name = 'ADispatcher.php';
+		/**
+		 * @var        string Javascript on request completed callback
+		 * @access     public
+		 * @static
+		 */
+		public static $paf_areq_js_callbak = NULL;
 		/**
 		 * @var        boolean utf8 support on/off
 		 * @access     public
@@ -195,7 +267,6 @@
 		 * @access     protected
 		 * @static
 		 */
-		//TODO: de modificat in TRUE la trecere in productie
 		protected static $paf_params_encrypt = FALSE;
 		/**
 		 * @var        boolean Window name auto usage on/off
@@ -212,6 +283,24 @@
 		 */
 		public static $debug = TRUE;
 		/**
+		 * @var        boolean Database debug mode on/off
+		 * @access     public
+		 * @static
+		 */
+		public static $db_debug = TRUE;
+		/**
+		 * @var        boolean Database debug to file on/off
+		 * @access     public
+		 * @static
+		 */
+		public static $db_debug2file = FALSE;
+		/**
+		 * @var        boolean Show debug invocation source file name and path in browser console on/off
+		 * @access     public
+		 * @static
+		 */
+		public static $console_show_file = TRUE;
+		/**
 		 * @var        boolean php console Chrome extension password
 		 * @access     public
 		 * @static
@@ -222,13 +311,7 @@
 		 * @access     public
 		 * @static
 		 */
-		public static $logs_path = '/logs/';
-		/**
-		 * @var        bool Flag for enabling/disabling aplication logging
-		 * @access     public
-		 * @static
-		 */
-		public static $app_logging = TRUE;
+		public static $logs_path = '/applogs';
 		/**
 		 * @var        string Name of the main log file
 		 * @access     public
@@ -246,7 +329,7 @@
 		 * @access     public
 		 * @static
 		 */
-		public static $debugging_log_file = 'debugging.log';
+		public static $debug_log_file = 'debugging.log';
 //END Logs & errors reporting
 //////////DO NOT MODIFY BELOW THIS LINE !
 		/**
@@ -264,12 +347,12 @@
 			return realpath(dirname(__FILE__));
 		}//END public static function ExtractAbsolutePath
 		/**
-		 * GenerateUID function generates a GUID (unique id) as 40-character hexadecimal number.
+		 * GenerateUID function generates a UID (unique id)
 		 *
 		 * @param      string $salt A string to be added as salt to the generated unique id (NULL and empty string means no salt will be used)
-		 * @param      string $algorithm The name of the algorithm used for GUID generation (posible values are those in hash_algos() array - see: http://www.php.net/manual/en/function.hash-algos.php)
+		 * @param      string $algorithm The name of the algorithm used for GUID generation (possible values are those in hash_algos() array - see: http://www.php.net/manual/en/function.hash-algos.php)
 		 * @param      bool $raw Sets return type: hexits for FALSE (default) or raw binary for TRUE
-		 * @return     string Returns an unique id (GUID) as lowercase hexits or raw binary representation if $raw is set to TRUE.
+		 * @return     string Returns an unique id (UID) as lowercase hex or raw binary representation if $raw is set to TRUE.
 		 * @access     public
 		 * @static
 		 */
@@ -277,5 +360,5 @@
 			if($notime) { return hash($algorithm,$salt,$raw); }
 			return hash($algorithm,((is_string($salt) && strlen($salt)>0) ? $salt : '').uniqid(microtime().rand(),TRUE),$raw);
 		}//END public static function GenerateUID
-	}//END abstract class PAFConfig
+	}//END abstract class PAFAppConfig
 ?>

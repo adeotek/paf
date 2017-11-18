@@ -19,7 +19,7 @@
 	 * @package  Hinter\PAF
 	 * @access   public
 	 */
-	class XPAF extends PAFReq {
+	class PAFRequest extends ARequest {
 		/**
 		 * Generic ajax call
 		 *
@@ -28,11 +28,7 @@
 		 * @access public
 		 */
 		public function AjaxCall($window_name,$param) {
-			global $paf;
-			if(!strlen($window_name)) {
-				$window_name = XSession::GenerateUID();
-				$this->js("window.name = '$window_name'");
-			}//if(!strlen($window_name))
+			if(!strlen($window_name)) { $this->js("window.name = '{$this->paf_object->phash}'"); }
 			try {
 				/*
 				 * Code
@@ -40,8 +36,6 @@
 			} catch(XException $e) {
 				ErrorHandler::AddError($e);
 			}//END try
-			ErrorHandler::ShowErrors();
-			$xsession->CommitSession(FALSE,TRUE);
 		}//END public function AjaxCall
-	}//END class XPAF extends PAFReq
+	}//END class PAFRequest extends ARequest
 ?>
