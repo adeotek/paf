@@ -11,6 +11,7 @@
  * @version    1.5.0
  * @filesource
  */
+    namespace PAF;
 	/**
 	 * PAF AException application exception class
 	 *

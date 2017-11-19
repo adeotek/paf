@@ -28,7 +28,7 @@
 	if(in_array('_post',array_keys(array_change_key_case($_REQUEST,CASE_LOWER)))) { exit(); }
 	if(array_key_exists('phpnfo',$_GET) && $_GET['phpnfo']==1) { phpinfo(); die(); }
 	require_once(_X_ROOT_PATH._X_APP_PATH._X_CONFIG_PATH.'/configuration.php');
-	$app = PAFApp::GetInstance();
+	$app = PAF\AApp::GetInstance();
 	//Require html/php file
 	$app->SessionCommit();
 ?>

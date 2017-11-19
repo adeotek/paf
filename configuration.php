@@ -13,6 +13,7 @@
  * @version    1.5.0
  * @filesource
  */
+	namespace PAF;
 	if(!defined('_X_VREQ') || _X_VREQ!==TRUE) { die('Invalid request!'); }
 	/** Require files for application startup */
 	require_once(_X_ROOT_PATH.PAFConfig::GetPafPath().'/helpers.php');
@@ -24,7 +25,7 @@
 	}//if(version_compare(PHP_VERSION,'7.0.0')<0)
 	require_once(_X_ROOT_PATH.PAFConfig::GetPafPath().'/AException.php');
 	require_once(_X_ROOT_PATH.PAFConfig::GetPafPath().'/ADebugger.php');
-	require_once(_X_ROOT_PATH.PAFConfig::GetPafPath().'/PAFApp.php');
+	require_once(_X_ROOT_PATH.PAFConfig::GetPafPath().'/AApp.php');
 	require_once(_X_ROOT_PATH.PAFConfig::GetPafPath().'/ARequest.php');
 	/**
 	 * User global constants and required files load
@@ -49,7 +50,7 @@
 	 * @access     public
 	 * @abstract
 	 */
-	abstract class PAFAppConfig {
+	abstract class AAppConfig {
 //START Custom configuration params
 
 //END Custom configuration params
@@ -360,5 +361,5 @@
 			if($notime) { return hash($algorithm,$salt,$raw); }
 			return hash($algorithm,((is_string($salt) && strlen($salt)>0) ? $salt : '').uniqid(microtime().rand(),TRUE),$raw);
 		}//END public static function GenerateUID
-	}//END abstract class PAFAppConfig
+	}//END abstract class AAppConfig
 ?>

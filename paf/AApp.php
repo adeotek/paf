@@ -24,7 +24,7 @@
 	 * @package  AdeoTEK\PAF
 	 * @access   public
 	 */
-	class PAFApp extends PAFAppConfig {
+	class AApp extends AAppConfig {
 		/**
 		 * @var    Object Singleton unique instance
 		 * @access protected
@@ -1405,5 +1405,5 @@
 		public static function TimerShow($name,$stop = TRUE) {
 			return PAFDebugger::TimerShow($name,$stop);
 		}//END public static function TimerStart
-	}//END class PAFApp extends PAFAppConfig
+	}//END class PAFApp extends AAppConfig
 ?>

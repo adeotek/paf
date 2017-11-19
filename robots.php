@@ -12,9 +12,16 @@
  * @version    1.5.0
  * @filesource
  */
-	require_once(realpath(dirname(__FILE__)).'/configuration.php');
-	PAFApp::SessionStart();
+    define('_X_VREQ',TRUE);
+	require_once('pconfig.inc');
+	require_once(_X_ROOT_PATH._X_APP_PATH._X_CONFIG_PATH.'/configuration.php');
+	PAF\AApp::SessionStart();
 	$_SESSION['robot'] = 1;
-	echo file_get_contents('robots.txt');
+	PAF\AApp::SessionClose();
+	switch(strtolower((array_key_exists('HTTP_HOST',$_SERVER) && $_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'localhost')) {
+		default:
+			echo file_get_contents('robots.txt');
+			break;
+	}//END switch
 	exit;
 ?>

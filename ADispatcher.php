@@ -19,7 +19,7 @@
 	 * @package  Hinter\PAF
 	 * @access   public
 	 */
-	class PAFRequest extends ARequest {
+	class PAFRequest extends PAF\ARequest {
 		/**
 		 * Generic ajax call
 		 *
@@ -28,14 +28,14 @@
 		 * @access public
 		 */
 		public function AjaxCall($window_name,$param) {
-			if(!strlen($window_name)) { $this->js("window.name = '{$this->paf_object->phash}'"); }
+			if(!strlen($window_name)) { $this->js("window.name = '{$this->aapp_object->phash}'"); }
 			try {
 				/*
 				 * Code
 				 */
-			} catch(XException $e) {
-				ErrorHandler::AddError($e);
+			} catch(PAF\AException $e) {
+				echo $e->getFullMessage();
 			}//END try
 		}//END public function AjaxCall
-	}//END class PAFRequest extends ARequest
+	}//END class PAFRequest extends PAF\ARequest
 ?>

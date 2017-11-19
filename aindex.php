@@ -25,6 +25,6 @@
 	if(in_array('_post',array_keys(array_change_key_case($_REQUEST,CASE_LOWER)))) { exit(); }
 	require_once(_X_ROOT_PATH._X_APP_PATH._X_CONFIG_PATH.'/configuration.php');
 	$dont_keep_alive = get_array_param($_GET,'dnka',get_array_param($_POST,'do_not_keep_alive',FALSE,'bool'),'bool');
-	$app = PAFApp::GetInstance(TRUE,array('namespace'=>$cnamespace),TRUE,$dont_keep_alive);
+	$app = PAF\AApp::GetInstance(TRUE,array('namespace'=>$cnamespace),TRUE,$dont_keep_alive);
 	$app->ExecuteARequest();
 ?>

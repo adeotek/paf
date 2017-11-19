@@ -11,22 +11,23 @@
  * @version    1.5.0
  * @filesource
  */
+    namespace PAF;
     /**
-     * PAF_DBG_DEBUG constant definition (used as parameter in PAF class debug methods)
+     * DBG_DEBUG constant definition (used as parameter in PAF class debug methods)
      */
-    define('PAF_DBG_DEBUG','log');
+    define('DBG_DEBUG','log');
     /**
-     * PAF_DBG_WARNING constant definition (used as parameter in PAF class debug methods)
+     * DBG_WARNING constant definition (used as parameter in PAF class debug methods)
      */
-    define('PAF_DBG_WARNING','warning');
+    define('DBG_WARNING','warning');
     /**
-     * PAF_DBG_ERROR constant definition (used as parameter in PAF class debug methods)
+     * DBG_ERROR constant definition (used as parameter in PAF class debug methods)
      */
-    define('PAF_DBG_ERROR','error');
+    define('DBG_ERROR','error');
     /**
-     * PAF_DBG_INFO constant definition (used as parameter in PAF class debug methods)
+     * DBG_INFO constant definition (used as parameter in PAF class debug methods)
      */
-    define('PAF_DBG_INFO','info');
+    define('DBG_INFO','info');
 	/**
 	 * ADebugger description
 	 *
@@ -107,14 +108,14 @@
 						if($dk=='PhpConsole') {
 							require_once(rtrim($path,'/').'/'.$dk.'/__autoload.php');
 							// $tmp_path = _X_ROOT_PATH.'/../';
-							PhpConsole\Connector::setPostponeStorage(new PhpConsole\Storage\File((strlen($tmp_path) ? rtrim($tmp_path,'/') : rtrim($path,'/')).'/phpcons.data'));
-							$this->debug_objects[$dk] = PhpConsole\Connector::getInstance();
-							if(PhpConsole\Connector::getInstance()->isActiveClient()) {
+							\PhpConsole\Connector::setPostponeStorage(new \PhpConsole\Storage\File((strlen($tmp_path) ? rtrim($tmp_path,'/') : rtrim($path,'/')).'/phpcons.data'));
+							$this->debug_objects[$dk] = \PhpConsole\Connector::getInstance();
+							if(\PhpConsole\Connector::getInstance()->isActiveClient()) {
 								$this->debug_objects[$dk]->setServerEncoding('UTF-8');
 								if(isset($this->phpconsole_password) && strlen($this->phpconsole_password)) { $this->debug_objects[$dk]->setPassword($this->phpconsole_password); }
 							} else {
 								$this->debug_objects[$dk] = NULL;
-							}//if(PhpConsole\Connector::getInstance()->isActiveClient())
+							}//if(\PhpConsole\Connector::getInstance()->isActiveClient())
 						} else {
 							require_once(rtrim($path,'/').'/'.$dk.'.php');
 							$this->debug_objects[$dk] = $dk::getInstance();
@@ -147,14 +148,14 @@
 		 *
 		 * @param  mixed $value Value to be displayed by the debug objects
 		 * @param  string $label Label assigned tot the value to be displayed
-		 * @param  string $type Debug type defined bay PAF_DBG_... constants
-		 * (PAF_DBG_DEBUG, PAF_DBG_WARNING, PAF_DBG_ERROR or PAF_DBG_INFO)
+		 * @param  string $type Debug type defined bay PAF\DBG_... constants
+		 * (PAF\DBG_DEBUG, PAF\DBG_WARNING, PAF\DBG_ERROR or PAF\DBG_INFO)
 		 * @param  boolean $file Output file name
 		 * @param  boolean $path Output file path
 		 * @return void
 		 * @access public
 		 */
-		public function Debug($value,$label = '',$type = PAF_DBG_DEBUG,$file = FALSE,$path = FALSE) {
+		public function Debug($value,$label = '',$type = DBG_DEBUG,$file = FALSE,$path = FALSE) {
 			if(!$this->enabled || !is_array($this->debug_objects)) { return; }
 			if($file===TRUE) {
 				$dbg = debug_backtrace();
@@ -166,10 +167,10 @@
 					switch($dn) {
 						case 'PhpConsole':
 							switch($type) {
-								case PAF_DBG_WARNING:
-								case PAF_DBG_ERROR:
-								case PAF_DBG_INFO:
-							  	case PAF_DBG_DEBUG:
+								case DBG_WARNING:
+								case DBG_ERROR:
+								case DBG_INFO:
+							  	case DBG_DEBUG:
 							  	default:
 									$do->getDebugDispatcher()->dispatchDebug($value,$label);
 									break;
@@ -177,16 +178,16 @@
 							break;
 						case 'FirePHP':
 							switch($type) {
-								case PAF_DBG_WARNING:
+								case DBG_WARNING:
 									$do->warn($value,$label);
 									break;
-								case PAF_DBG_ERROR:
+								case DBG_ERROR:
 									$do->error($value,$label);
 									break;
-								case PAF_DBG_INFO:
+								case DBG_INFO:
 									$do->info($value,$label);
 									break;
-							  	case PAF_DBG_DEBUG:
+							  	case DBG_DEBUG:
 							  	default:
 									$do->log($value,$label);
 									break;
@@ -214,7 +215,7 @@
 				$caller = array_shift($dbg);
 				$label = '['.($path===TRUE ? $caller['file'] : basename($caller['file'])).':'.$caller['line'].']'.$label;
 			}//if($file===TRUE)
-			$this->Debug($value,$label,PAF_DBG_DEBUG);
+			$this->Debug($value,$label,DBG_DEBUG);
 		}//END public function Dlog
 		/**
 		 * Displays a value in the debugger plugin as a warning message
@@ -232,7 +233,7 @@
 				$caller = array_shift($dbg);
 				$label = '['.($path===TRUE ? $caller['file'] : basename($caller['file'])).':'.$caller['line'].']'.$label;
 			}//if($file===TRUE)
-			$this->Debug($value,$label,PAF_DBG_WARNING);
+			$this->Debug($value,$label,DBG_WARNING);
 		}//END public function Wlog
 		/**
 		 * Displays a value in the debugger plugin as an error message
@@ -250,7 +251,7 @@
 				$caller = array_shift($dbg);
 				$label = '['.($path===TRUE ? $caller['file'] : basename($caller['file'])).':'.$caller['line'].']'.$label;
 			}//if($file===TRUE)
-			$this->Debug($value,$label,PAF_DBG_ERROR);
+			$this->Debug($value,$label,DBG_ERROR);
 		}//END public function Elog
 		/**
 		 * Displays a value in the debugger plugin as an info message
@@ -268,7 +269,7 @@
 				$caller = array_shift($dbg);
 				$label = '['.($path===TRUE ? $caller['file'] : basename($caller['file'])).':'.$caller['line'].']'.$label;
 			}//if($file===TRUE)
-			$this->Debug($value,$label,PAF_DBG_INFO);
+			$this->Debug($value,$label,DBG_INFO);
 		}//END public function Ilog
 		/**
 		 * Add entry to log file
@@ -284,7 +285,7 @@
 			$lf = strlen($file) ? $file : 'unknown.log';
 			try {
 				$lfile = fopen($lf,'a');
-				if(!$lfile) { throw new XException("Unable to open log file [{$file}]!",E_WARNING,1); }
+				if(!$lfile) { throw new AException("Unable to open log file [{$file}]!",E_WARNING,1); }
 				if(is_array($msg) && count($msg)>0) {
 					$script_name = (array_key_exists('file',$msg) && strlen($msg['file'])) ? $msg['file'] : (strlen($script_name) ? $script_name : __FILE__);
 					$script_name .= (array_key_exists('line',$msg) && strlen($msg['line'])) ? ' (ln: '.$msg['line'].')' : '';
@@ -298,7 +299,7 @@
 				fwrite($lfile,'#'.date('Y-m-d H:i:s')."# <{$script_name}>{$type} {$message}\n");
 				fclose($lfile);
 				return TRUE;
-			} catch(XException $e) {
+			} catch(AException $e) {
 				return $e->getMessage();
 			}//END try
 		}//END public static function AddToLog

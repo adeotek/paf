@@ -11,6 +11,7 @@
  * @version    1.5.0
  * @filesource
  */
+    namespace PAF;
 	/**
 	 * PAF ajax requests class.
 	 *
@@ -24,7 +25,7 @@
 		 * @var    PAF Reference to the PAF object (for interacting with session data)
 		 * @access protected
 		 */
-		protected $app_object = NULL;
+		protected $aapp_object = NULL;
 		/**
 		 * @var    string Session sub-array key for storing PAFReq data
 		 * @access protected
@@ -56,7 +57,7 @@
 		 */
 		protected $pafi = NULL;
 		/**
-		 * @var    string Control key for securizing the request session data
+		 * @var    string Control key for securing the request session data
 		 * @access protected
 		 */
 		protected $paf_http_key = '';
@@ -98,12 +99,13 @@
 		/**
 		 * PAFReq constructor function
 		 *
-		 * @param  PAF $paf_obj Reference to the PAF instance
+		 * @param  AApp $app_obj Reference to the PAF application instance
+		 * @param  string $subsession Sub-session key/path
 		 * @return void
 		 * @access public
 		 */
-		public function __construct(&$paf_obj,$subsession = NULL) {
-			$this->app_object = &$paf_obj;
+		public function __construct(&$app_obj,$subsession = NULL) {
+			$this->aapp_object = &$app_obj;
 			if(is_string($subsession) && strlen($subsession)) {
 				$this->subsession = array($subsession,self::$paf_session_key);
 			} elseif(is_array($subsession) && count($subsession)) {
@@ -113,7 +115,7 @@
 				$this->subsession = self::$paf_session_key;
 			}//if(is_string($subsession) && strlen($subsession))
 			$this->Init();
-		}//public function __construct(&$paf_obj)
+		}//END public function __construct
 		/**
 		 * Initiate PAFReq session data (generate session data id) if is not initialized
 		 *
@@ -121,12 +123,12 @@
 		 * @access protected
 		 */
 		protected function Init() {
-			$lpafi = $this->app_object->GetGlobalParam(PAFApp::ConvertToSessionCase('PAF_PAFI',self::$paf_session_keys_case),FALSE,$this->subsession,FALSE);
+			$lpafi = $this->aapp_object->GetGlobalParam(AApp::ConvertToSessionCase('PAF_PAFI',self::$paf_session_keys_case),FALSE,$this->subsession,FALSE);
 			if(strlen($lpafi)) {
 				$this->pafi = $lpafi;
 			} else {
 				$this->pafi = self::GenerateUID();
-				$this->app_object->SetGlobalParam(PAFApp::ConvertToSessionCase('PAF_PAFI',self::$paf_session_keys_case),$this->pafi,FALSE,$this->subsession,FALSE);
+				$this->aapp_object->SetGlobalParam(AApp::ConvertToSessionCase('PAF_PAFI',self::$paf_session_keys_case),$this->pafi,FALSE,$this->subsession,FALSE);
 			}//if(strlen($lpafi))
 			$this->StartSecureHttp();
 		}//END protected function Init
@@ -137,23 +139,23 @@
 		 * @access protected
 		 */
 		protected function ClearState() {
-			$this->app_object->UnsetGlobalParam(PAFApp::ConvertToSessionCase('PAF_PAFI',self::$paf_session_keys_case),FALSE,$this->subsession,FALSE);
-			$this->app_object->UnsetGlobalParam(PAFApp::ConvertToSessionCase('PAF_HTTPK',self::$paf_session_keys_case),FALSE,$this->subsession,FALSE);
+			$this->aapp_object->UnsetGlobalParam(AApp::ConvertToSessionCase('PAF_PAFI',self::$paf_session_keys_case),FALSE,$this->subsession,FALSE);
+			$this->aapp_object->UnsetGlobalParam(AApp::ConvertToSessionCase('PAF_HTTPK',self::$paf_session_keys_case),FALSE,$this->subsession,FALSE);
 			$this->pafi = $this->paf_http_key = NULL;
 			$this->Init();
 		}//END protected function ClearState
 
 		protected function StartSecureHttp() {
 			if(!self::$paf_secure_http) { return; }
-			$this->paf_http_key = $this->app_object->GetGlobalParam(PAFApp::ConvertToSessionCase('PAF_HTTPK',self::$paf_session_keys_case),FALSE,$this->subsession,FALSE);
+			$this->paf_http_key = $this->aapp_object->GetGlobalParam(AApp::ConvertToSessionCase('PAF_HTTPK',self::$paf_session_keys_case),FALSE,$this->subsession,FALSE);
 			if(!strlen($this->paf_http_key)) {
 				$this->paf_http_key = self::GenerateUID(self::$session_key,'sha256');
-				$this->app_object->SetGlobalParam(PAFApp::ConvertToSessionCase('PAF_HTTPK',self::$paf_session_keys_case),$this->paf_http_key,FALSE,$this->subsession,FALSE);
+				$this->aapp_object->SetGlobalParam(AApp::ConvertToSessionCase('PAF_HTTPK',self::$paf_session_keys_case),$this->paf_http_key,FALSE,$this->subsession,FALSE);
 			}//if(!strlen($this->paf_http_key))
 		}//END protected function StartSecureHttp
 
 		protected function ClearSecureHttp() {
-			$this->app_object->UnsetGlobalParam(PAFApp::ConvertToSessionCase('PAF_HTTPK',self::$paf_session_keys_case),FALSE,$this->subsession,FALSE);
+			$this->aapp_object->UnsetGlobalParam(AApp::ConvertToSessionCase('PAF_HTTPK',self::$paf_session_keys_case),FALSE,$this->subsession,FALSE);
 			$this->paf_http_key = NULL;
 		}//END protected function ClearSecureHttp
 
@@ -168,7 +170,7 @@
 
 		public function GetClassFile() {
 			if(strlen(self::$paf_class_file)) { return self::$paf_class_file; }
-			return $this->app_object->GetAppAbsolutePath().self::$paf_class_file_path.self::$paf_class_file_name;
+			return $this->aapp_object->GetAppAbsolutePath().self::$paf_class_file_path.self::$paf_class_file_name;
 		}//END public function GetClassFile
 
 		public function SetClassFile($value) {
@@ -226,13 +228,13 @@
 
 		public function jsInit($with_output = TRUE) {
 			$js = '<script type="text/javascript">'."\n";
-			$js .= "\t".'var PAF_PHASH="'.$this->app_object->phash.'";'."\n";
-			$js .= "\t".'var PAF_TARGET="'.$this->app_object->app_web_link.'/'.self::$paf_target.'";'."\n";
+			$js .= "\t".'var PAF_PHASH="'.$this->aapp_object->phash.'";'."\n";
+			$js .= "\t".'var PAF_TARGET="'.$this->aapp_object->app_web_link.'/'.self::$paf_target.'";'."\n";
 			$js .= "\t".'var PAF_HTTPK="'.$this->paf_http_key.'";'."\n";
-			$js .= "\t".'var PAF_JS_PATH="'.$this->app_object->app_web_link.self::$paf_js_path.'";'."\n";
+			$js .= "\t".'var PAF_JS_PATH="'.$this->aapp_object->app_web_link.self::$paf_js_path.'";'."\n";
 			$js .= '</script>'."\n";
-			$js .= '<script type="text/javascript" src="'.$this->app_object->app_web_link.self::$paf_js_path.'/gibberish-aes.min.js?v=1411031"></script>'."\n";
-			$js .= '<script type="text/javascript" src="'.$this->app_object->app_web_link.self::$paf_js_path.'/arequest.min.js?v=1711181"></script>'."\n";
+			$js .= '<script type="text/javascript" src="'.$this->aapp_object->app_web_link.self::$paf_js_path.'/gibberish-aes.min.js?v=1411031"></script>'."\n";
+			$js .= '<script type="text/javascript" src="'.$this->aapp_object->app_web_link.self::$paf_js_path.'/arequest.min.js?v=1711181"></script>'."\n";
 			if($with_output===TRUE) { echo $js; }
 			return $js;
 		}//END public function jsInit
@@ -392,21 +394,21 @@
 							$class_file = $class_file ? $class_file : $this->GetClassFile();
 							$class_name = $class_name ? $class_name : $this->GetClassName();
 							$req_sess_params = array(
-								PAFApp::ConvertToSessionCase('UTF8',self::$paf_session_keys_case)=>self::$paf_utf8,
-								PAFApp::ConvertToSessionCase('FUNCTION',self::$paf_session_keys_case)=>$function,
-								PAFApp::ConvertToSessionCase('CLASS_FILE',self::$paf_session_keys_case)=>$class_file,
-								PAFApp::ConvertToSessionCase('CLASS',self::$paf_session_keys_case)=>$class_name,
+								AApp::ConvertToSessionCase('UTF8',self::$paf_session_keys_case)=>self::$paf_utf8,
+								AApp::ConvertToSessionCase('FUNCTION',self::$paf_session_keys_case)=>$function,
+								AApp::ConvertToSessionCase('CLASS_FILE',self::$paf_session_keys_case)=>$class_file,
+								AApp::ConvertToSessionCase('CLASS',self::$paf_session_keys_case)=>$class_name,
 							);
 						} else {
 							$req_sess_params = array(
-								PAFApp::ConvertToSessionCase('UTF8',self::$paf_session_keys_case)=>self::$paf_utf8,
-								PAFApp::ConvertToSessionCase('FUNCTION',self::$paf_session_keys_case)=>$function,
+								AApp::ConvertToSessionCase('UTF8',self::$paf_session_keys_case)=>self::$paf_utf8,
+								AApp::ConvertToSessionCase('FUNCTION',self::$paf_session_keys_case)=>$function,
 							);
 						}//if($class_file || $class_name || $this->custom_class)
 						$subsession = is_array($this->subsession) ? $this->subsession : array($this->subsession);
-						$subsession[] = PAFApp::ConvertToSessionCase('PAF_REQUEST',self::$paf_session_keys_case);
-						$subsession[] = PAFApp::ConvertToSessionCase('REQUESTS',self::$paf_session_keys_case);
-						$this->app_object->SetGlobalParam(PAFApp::ConvertToSessionCase($request_id,self::$paf_session_keys_case),$req_sess_params,FALSE,$subsession,FALSE);
+						$subsession[] = AApp::ConvertToSessionCase('PAF_REQUEST',self::$paf_session_keys_case);
+						$subsession[] = AApp::ConvertToSessionCase('REQUESTS',self::$paf_session_keys_case);
+						$this->aapp_object->SetGlobalParam(AApp::ConvertToSessionCase($request_id,self::$paf_session_keys_case),$req_sess_params,FALSE,$subsession,FALSE);
 						$session_id = rawurlencode(GibberishAES::enc(session_id(),self::$session_key));
 						$postparams = $this->PreparePostParams($post_params);
 						$args_separators = array($this->paf_params_separator,$this->paf_arr_e_separator,$this->paf_arr_kv_separator);
