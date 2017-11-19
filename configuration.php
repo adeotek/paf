@@ -334,19 +334,15 @@
 //END Logs & errors reporting
 //////////DO NOT MODIFY BELOW THIS LINE !
 		/**
-		 * ExtractAbsolutePath function returns the absolute path to the root of the application.
-		 * For this to work properly, paf_config_path property must be set.
+		 * Gets the relative path to the PAF classes folder
 		 *
-		 * @return     string Returns the absolute path for the root of the application.
+		 * @return     string Returns the relative PAF path.
 		 * @access     public
 		 * @static
 		 */
-		public static function ExtractAbsolutePath() {
-			if(strlen(self::$paf_config_path)>0) {
-				return realpath(dirname(__FILE__).str_repeat('/..',substr_count(ltrim(self::$paf_config_path,'/'),'/')));
-			}//if(strlen(self::$paf_path)>0)
-			return realpath(dirname(__FILE__));
-		}//END public static function ExtractAbsolutePath
+		public static function GetPafPath() {
+			return ((self::$paf_location=='public' ? _X_WEB_ROOT_PATH._X_PUBLIC_PATH : _X_APP_PATH).self::$paf_path);
+		}//END public static function GetPafPath
 		/**
 		 * GenerateUID function generates a UID (unique id)
 		 *
@@ -361,5 +357,47 @@
 			if($notime) { return hash($algorithm,$salt,$raw); }
 			return hash($algorithm,((is_string($salt) && strlen($salt)>0) ? $salt : '').uniqid(microtime().rand(),TRUE),$raw);
 		}//END public static function GenerateUID
+		/**
+		 * Custom class autoload method
+		 *
+		 * @param      string $class Called class name
+		 * @return     void
+		 * @access     public
+		 * @static
+		 */
+		public static function XAutoload($class) {
+			global $_CLASSES_REGISTRY;
+			if(strpos($class,'\\')!==FALSE) {
+				$class_arr = explode('\\',$class);
+				if(!array_key_exists($class_arr[0],$_CLASSES_REGISTRY)) { return FALSE; }
+				$fpath = trim(get_array_param($_CLASSES_REGISTRY,$class_arr[0],'','is_string','path'),'/');
+				$fname = $class_arr[count($class_arr)-1];
+				$npath = '';
+				for($i=1;$i<count($class_arr)-2;$i++) { $npath .= (strlen($npath) ? '/' : '').$class_arr[$i]; }
+				require_once(_X_ROOT_PATH._X_APP_PATH.'/'.(strlen($fpath) ? $fpath.'/' : '').(strlen($npath) ? $npath.'/' : '').$fname.'.php');
+				return TRUE;
+			}//if(strpos($class,'\\')!==FALSE)
+			if(substr($class,-3)=='Pdf') {
+				$bclass = substr($class,0,-3);
+				require_once(_X_ROOT_PATH._X_APP_PATH._X_CONFIG_PATH.'/registries/modules_registry.inc');
+				if(isset($_MODULES_REGISTRY) && is_array($_MODULES_REGISTRY) && array_key_exists($bclass,$_MODULES_REGISTRY)) {
+					$ns = get_array_param($_MODULES_REGISTRY,$bclass,'','is_string','namespace');
+					$subfolder = get_array_param($_MODULES_REGISTRY,$bclass,'','is_string','subfolder');
+					$tfolder = get_array_param($_CLASSES_REGISTRY,'*Pdf','','is_string','path');
+					$fpath = '/modules/';
+					if(strlen($ns)) { $fpath .= $ns.'/'; }
+					if(strlen($subfolder)) { $fpath .= $subfolder.'/'; }
+					$fpath .= $bclass.'/';
+					if(strlen($tfolder)) { $fpath .= $tfolder.'/'; }
+					require_once(_X_ROOT_PATH._X_APP_PATH.'/'.$fpath.$class.'.php');
+					return TRUE;
+				}//if(isset($_MODULES_REGISTRY) && is_array($_MODULES_REGISTRY) && array_key_exists($bclass,$_MODULES_REGISTRY))
+			}//if(substr($class,-3)=='Pdf')
+			if(!array_key_exists($class,$_CLASSES_REGISTRY)) { return FALSE; }
+			$fpath = trim(get_array_param($_CLASSES_REGISTRY,$class,'','is_string','path'),'/');
+			$fname = trim(get_array_param($_CLASSES_REGISTRY,$class,$class,'is_notempty_string','name'),'/');
+			require_once(_X_ROOT_PATH._X_APP_PATH.'/'.(strlen($fpath) ? $fpath.'/' : '').$fname.'.php');
+			return TRUE;
+		}//END public static function XAutoload
 	}//END abstract class AAppConfig
 ?>

@@ -20,7 +20,7 @@
 	 * @package  AdeoTEK\PAF
 	 * @access   public
 	 */
-	class ARequest extends PAFAppConfig {
+	class ARequest extends AAppConfig {
 		/**
 		 * @var    PAF Reference to the PAF object (for interacting with session data)
 		 * @access protected
@@ -280,7 +280,7 @@
 			if(!is_array($params) || !count($params)) { return NULL; }
 			$commands = $this->GetCommands($params);
 			if(!strlen($commands)) { return NULL; }
-			return $this->run($commands,$loader,$confirm,$js_script,$async,$run_oninit_event,$post_params,$class_file,$class_name,$interval,$callback,$with_context);
+			return $this->Prepare($commands,$loader,$confirm,$js_script,$async,$run_oninit_event,$post_params,$class_file,$class_name,$interval,$callback,$with_context);
 		}//END public function PrepareAjaxCall
 		/**
 		 * Generate command parameters string for AjaxCall request
@@ -329,7 +329,7 @@
 				$ptarget = NULL;
 			}//if(array_key_exists('target',$lparams))
 			$parameters = $this->GetCommandParmeters($lparams);
-			// XSession::_Dlog($parameters,'$parameters');
+			// $this->aapp_object->Dlog($parameters,'$parameters');
 			if(strlen($parameters)) { $commands .= ','.$parameters; }
 			if(strlen($ptarget)) { $commands .= (strlen($parameters) ? '' : ",''").",'{$ptarget}'"; }
 			$commands .= ")".(strlen($target) ? '->'.$target : '');

@@ -531,7 +531,7 @@
 	 */
 	function get_timestamp($date,$timezone = NULL,$new_timezone = NULL) {
 		try {
-			$dt = new DateTime($date,new DateTimeZone(strlen($timezone) ? $timezone : XSession::$server_timezone));
+			$dt = new DateTime($date,new DateTimeZone(strlen($timezone) ? $timezone : AAppConfig::$server_timezone));
 			if(strlen($new_timezone)) {
 				$dt->setTimezone(new DateTimeZone($new_timezone));
 			}//if(strlen($new_timezone))

@@ -84,7 +84,7 @@
 		 * @var    \PAF\ARequest Object for ajax requests processing
 		 * @access public
 		 */
-		public $areq = NULL;
+		public $arequest = NULL;
 		/**
 		 * @var    string Application non-public path (auto-set on constructor)
 		 * @access public
@@ -319,7 +319,7 @@
 		 */
 		public static function ConfigAndStartSession($absolute_path,$domain,$session_id = NULL) {
 			self::$session_started = FALSE;
-			if(class_exists('ErrorHandler')) { ErrorHandler::$silent_mode = TRUE; }
+			if(class_exists('\\ErrorHandler')) { \ErrorHandler::$silent_mode = TRUE; }
 			$errors = [];
 			$dbg_data = '';
 			ini_set('session.use_cookies',1);
@@ -339,11 +339,11 @@
 							$dbg_data .= 'Set new session id: '.$session_id."\n";
 						}//if(is_string($session_id) && strlen($session_id))
 						session_start();
-					} catch(Exception $e) {
+					} catch(\Exception $e) {
 						$errors[] = ['errstr'=>$e->getMessage(),'errno'=>$e->getCode(),'errfile'=>$e->getFile(),'errline'=>$e->getLine()];
 					} finally {
-						if(class_exists('ErrorHandler') && ErrorHandler::HasErrors()) {
-							$eh_errors = ErrorHandler::GetErrors(TRUE);
+						if(class_exists('\\ErrorHandler') && \ErrorHandler::HasErrors()) {
+							$eh_errors = \ErrorHandler::GetErrors(TRUE);
 							$errors = array_merge($errors,$eh_errors);
 						}//if(class_exists('ErrorHandler') && ErrorHandler::HasErrors())
 						if(count($errors)>0) {
@@ -370,11 +370,11 @@
 							$dbg_data .= 'Set new session id: '.$session_id."\n";
 						}//if(is_string($session_id) && strlen($session_id))
 						session_start();
-					} catch(Exception $e) {
+					} catch(\Exception $e) {
 						$errors[] = ['errstr'=>$e->getMessage(),'errno'=>$e->getCode(),'errfile'=>$e->getFile(),'errline'=>$e->getLine()];
 					} finally {
-						if(class_exists('ErrorHandler') && ErrorHandler::HasErrors()) {
-							$eh_errors = ErrorHandler::GetErrors(TRUE);
+						if(class_exists('\\ErrorHandler') && \ErrorHandler::HasErrors()) {
+							$eh_errors = \ErrorHandler::GetErrors(TRUE);
 							$errors = array_merge($errors,$eh_errors);
 						}//if(class_exists('ErrorHandler') && ErrorHandler::HasErrors())
 						if(count($errors)>0) {
@@ -397,11 +397,11 @@
 							$dbg_data .= 'Set new session id: '.$session_id."\n";
 						}//if(is_string($session_id) && strlen($session_id))
 						session_start();
-					} catch(Exception $e) {
+					} catch(\Exception $e) {
 						$errors[] = ['errstr'=>$e->getMessage(),'errno'=>$e->getCode(),'errfile'=>$e->getFile(),'errline'=>$e->getLine()];
 					} finally {
-						if(class_exists('ErrorHandler') && ErrorHandler::HasErrors()) {
-							$eh_errors = ErrorHandler::GetErrors(TRUE);
+						if(class_exists('\\ErrorHandler') && \ErrorHandler::HasErrors()) {
+							$eh_errors = \ErrorHandler::GetErrors(TRUE);
 							$errors = array_merge($errors,$eh_errors);
 						}//if(class_exists('ErrorHandler') && ErrorHandler::HasErrors())
 						if(count($errors)>0) {
@@ -415,7 +415,7 @@
 					}//try
 				}//if(class_exists('Memcached',FALSE))
 			}//if(!$initialized && self::$session_memcached===TRUE)
-			if(class_exists('ErrorHandler')) { ErrorHandler::$silent_mode = FALSE; }
+			if(class_exists('\\ErrorHandler')) { \ErrorHandler::$silent_mode = FALSE; }
 			if(!self::$session_started) {
 				ini_set('session.save_handler','files');
 				if(strlen(self::$session_file_path)>0) {
@@ -534,7 +534,7 @@
 					if(!$this->phash) {
 						$this->phash = is_array($_COOKIE) && array_key_exists('__x_pHash_',$_COOKIE) && strlen($_COOKIE['__x_pHash_']) && strlen($_COOKIE['__x_pHash_'])>12 ? substr($_COOKIE['__x_pHash_'],0,-12) : NULL;
 					}//if(!$this->phash)
-					if(!$this->phash ) { $this->phash = XSession::GenerateUID(); }
+					if(!$this->phash ) { $this->phash = self::GenerateUID(); }
 				}//if(self::$split_session_by_page)
 				$uri_len = strpos($_SERVER['REQUEST_URI'],'?')!==FALSE ? strpos($_SERVER['REQUEST_URI'],'?') : (strpos($_SERVER['REQUEST_URI'],'#')!==FALSE ? strpos($_SERVER['REQUEST_URI'],'#') : strlen($_SERVER['REQUEST_URI']));
 				$this->url_base = $this->app_web_protocol.$this->app_domain.substr($_SERVER['REQUEST_URI'],0,$uri_len);
@@ -570,7 +570,7 @@
 		 */
 		public function SessionCommit($clear = FALSE,$preserve_output_buffer = FALSE,$show_errors = TRUE,$key = NULL,$phash = NULL,$reload = TRUE) {
 			if(!$this->with_session) {
-				if($show_errors && method_exists('ErrorHandler','ShowErrors')) { ErrorHandler::ShowErrors(); }
+				if($show_errors && method_exists('\\ErrorHandler','ShowErrors')) { \ErrorHandler::ShowErrors(); }
 				if($preserve_output_buffer!==TRUE) { $this->FlushOutputBuffer(); }
 				return;
 			}//if(!$this->with_session)
@@ -637,7 +637,7 @@
 				}//if($reload)
 			}//($clear===TRUE || $this->clear_session===TRUE)
 			if(!self::$session_started) { session_write_close(); }
-			if($show_errors && method_exists('ErrorHandler','ShowErrors')) { ErrorHandler::ShowErrors(); }
+			if($show_errors && method_exists('\\ErrorHandler','ShowErrors')) { \ErrorHandler::ShowErrors(); }
 			if($preserve_output_buffer!==TRUE) { $this->FlushOutputBuffer(); }
 		}//END public function SessionCommit
 		/**
@@ -694,7 +694,7 @@
 		 *
 		 * @param  string $key The key of the searched parameter
 		 * @param  string $phash The page hash (default NULL)
-		 * If FALSE is passed, the main (XSession property) page hash will not be used
+		 * If FALSE is passed, the main (AApp property) page hash will not be used
 		 * @param  string $path An array containing the succession of keys for the searched parameter
 		 * @param  mixed  @keys_case Custom session keys case: CASE_LOWER/CASE_UPPER,
 		 * FALSE - do not change case, NULL - use the configuration value
@@ -720,7 +720,7 @@
 		 * @param  string $key The key of the searched parameter
 		 * @param  mixed  $val The value to be set
 		 * @param  string $phash The page hash (default NULL)
-		 * If FALSE is passed, the main (XSession property) page hash will not be used
+		 * If FALSE is passed, the main (AApp property) page hash will not be used
 		 * @param  string $path An array containing the succession of keys for the searched parameter
 		 * @param  mixed  @keys_case Custom session keys case: CASE_LOWER/CASE_UPPER,
 		 * FALSE - do not change case, NULL - use the configuration value
@@ -765,7 +765,7 @@
 		 *
 		 * @param  string $key The key of the searched parameter
 		 * @param  string $phash The page hash (default NULL)
-		 * If FALSE is passed, the main (XSession property) page hash will not be used
+		 * If FALSE is passed, the main (AApp property) page hash will not be used
 		 * @param  mixed  @keys_case Custom session keys case: CASE_LOWER/CASE_UPPER,
 		 * FALSE - do not change case, NULL - use the configuration value
 		 * @return void
@@ -857,12 +857,12 @@
 		 * @access public
 		 */
 		public function ARequestInit($post_params = array(),$subsession = NULL,$js_init = TRUE,$with_output = TRUE) {
-			if(!is_object($this->areq)) {
-				$this->areq = new ARequest($this,$subsession);
-				$this->areq->SetPostParams($post_params);
-			}//if(!is_object($this->areq))
+			if(!is_object($this->arequest)) {
+				$this->arequest = new ARequest($this,$subsession);
+				$this->arequest->SetPostParams($post_params);
+			}//if(!is_object($this->arequest))
 			if($js_init!==TRUE) { return TRUE; }
-			return $this->areq->JsInit($with_output);
+			return $this->arequest->JsInit($with_output);
 		}//END public function ARequestInit
 		/**
 		 * Execute a method of the ARequest implementing class in an ajax request
@@ -917,17 +917,17 @@
 				}//try
 				if(!$errors) {
 					/* Execute the requested function */
-					$this->areq = new $class($this,$subsession);
-					$this->areq->SetPostParams($post_params);
-					$this->areq->SetUtf8($with_utf8);
-					$errors = $this->areq->ExecuteRequest($method,$php);
+					$this->arequest = new $class($this,$subsession);
+					$this->arequest->SetPostParams($post_params);
+					$this->arequest->SetUtf8($with_utf8);
+					$errors = $this->arequest->ExecuteRequest($method,$php);
 					$this->SessionCommit(NULL,TRUE);
-					if($this->areq->HasActions()) { echo $this->areq->Send(); }
+					if($this->arequest->HasActions()) { echo $this->arequest->Send(); }
 					$content = $this->GetOutputBufferContent();
 				} else {
 					$content = $errors;
 				}//if(!$errors)
-				echo $this->areq->GetUtf8() ? $content : utf8_encode($content);
+				echo $this->arequest->GetUtf8() ? $content : utf8_encode($content);
 				//$this->ClearOutputBuffer(TRUE);
 			} else {
 				AApp::AddToLog(array('type'=>'error','message'=>$errors,'no'=>-1,'file'=>__FILE__,'line'=>__LINE__),$this->app_path.self::$logs_path.'/'.self::$errors_log_file);
