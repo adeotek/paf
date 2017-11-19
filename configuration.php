@@ -3,12 +3,12 @@
  * PAF (PHP AJAX Framework) Configuration file
  *
  * Here are all the configuration params for PAF
- * Edit only values for the PAFConfig class properties
+ * Edit only values for the AAppConfig class properties
  * and the User global required files section
  *
  * @package    AdeoTEK\PAF
  * @author     George Benjamin-Schonberger
- * @copyright  Copyright (c) 2010 - 2018 AdeoTEK
+ * @copyright  Copyright (c) 2012 - 2018 AdeoTEK
  * @license    LICENSE.md
  * @version    1.5.0
  * @filesource
@@ -16,17 +16,17 @@
 	namespace PAF;
 	if(!defined('_X_VREQ') || _X_VREQ!==TRUE) { die('Invalid request!'); }
 	/** Require files for application startup */
-	require_once(_X_ROOT_PATH.PAFConfig::GetPafPath().'/helpers.php');
+	require_once(_X_ROOT_PATH.AAppConfig::GetPafPath().'/helpers.php');
 	if(version_compare(PHP_VERSION,'7.0.0')<0) {
-		// require_once(_X_ROOT_PATH.PAFConfig::GetPafPath().'/random_compat.phar');
-		require_once(_X_ROOT_PATH.PAFConfig::GetPafPath().'/GibberishAES_5x.php');
+		// require_once(_X_ROOT_PATH.AAppConfig::GetPafPath().'/random_compat.phar');
+		require_once(_X_ROOT_PATH.AAppConfig::GetPafPath().'/GibberishAES_5x.php');
 	} else {
-	require_once(_X_ROOT_PATH.PAFConfig::GetPafPath().'/GibberishAES.php');
+	require_once(_X_ROOT_PATH.AAppConfig::GetPafPath().'/GibberishAES.php');
 	}//if(version_compare(PHP_VERSION,'7.0.0')<0)
-	require_once(_X_ROOT_PATH.PAFConfig::GetPafPath().'/AException.php');
-	require_once(_X_ROOT_PATH.PAFConfig::GetPafPath().'/ADebugger.php');
-	require_once(_X_ROOT_PATH.PAFConfig::GetPafPath().'/AApp.php');
-	require_once(_X_ROOT_PATH.PAFConfig::GetPafPath().'/ARequest.php');
+	require_once(_X_ROOT_PATH.AAppConfig::GetPafPath().'/AException.php');
+	require_once(_X_ROOT_PATH.AAppConfig::GetPafPath().'/ADebugger.php');
+	require_once(_X_ROOT_PATH.AAppConfig::GetPafPath().'/AApp.php');
+	require_once(_X_ROOT_PATH.AAppConfig::GetPafPath().'/ARequest.php');
 	/**
 	 * User global constants and required files load
 	 *
@@ -40,9 +40,9 @@
 		spl_autoload_register('XSession::XAutoload',TRUE,TRUE);
 	}//if(!defined('X_REGISTER_AUTOLOADER') || X_REGISTER_AUTOLOADER!==FALSE)
 	/**
-	 * PAFConfig is the configuration holder for PAF
+	 * AAppConfig is the configuration holder for PAF
 	 *
-	 * PAFConfig contains all the configuration parameters for PAF (PHP AJAX Framework)
+	 * AAppConfig contains all the configuration parameters for PAF (PHP AJAX Framework)
 	 * Most of the properties are public. Those that are not, either have Getter/Setter function
 	 * or can not be changed during run.
 	 *

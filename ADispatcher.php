@@ -1,39 +1,40 @@
 <?php
 /**
- * Short desc
+ * Sample ARequest implementation class file
  *
- * description
+ * This class extends ARequest
  *
- * @package    Hinter\PAF
- * @author     Hinter Software
- * @copyright  Copyright (c) 2004 - 2013 Hinter Software
- * @license    LICENSE.txt
- * @version    1.2.0
+ * @package    AdeoTEK\PAF
+ * @author     George Benjamin-Schonberger
+ * @copyright  Copyright (c) 2012 - 2018 AdeoTEK
+ * @license    LICENSE.md
+ * @version    1.5.0
  * @filesource
  */
 	/**
-	 * ClassName description
+	 * Sample ARequest implementation class
 	 *
-	 * long_description
+	 * This class extends ARequest
 	 *
-	 * @package  Hinter\PAF
+	 * @package  AdeoTEK\PAF
 	 * @access   public
 	 */
 	class PAFRequest extends PAF\ARequest {
 		/**
 		 * Generic ajax call
 		 *
-		 * @param  type $param_name param description
+		 * @param  string $window_name Window/tab name (UID)
+		 * @param  mixed $param Parameter to be used in code execution
 		 * @return void return description
 		 * @access public
 		 */
 		public function AjaxCall($window_name,$param) {
-			if(!strlen($window_name)) { $this->js("window.name = '{$this->aapp_object->phash}'"); }
+			if(!strlen($window_name)) { $this->ExecuteJs("window.name = '{$this->aapp_object->phash}'"); }
 			try {
 				/*
 				 * Code
 				 */
-			} catch(PAF\AException $e) {
+			} catch(AException $e) {
 				echo $e->getFullMessage();
 			}//END try
 		}//END public function AjaxCall

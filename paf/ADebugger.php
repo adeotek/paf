@@ -6,7 +6,7 @@
  *
  * @package    AdeoTEK\PAF
  * @author     George Benjamin-Schonberger
- * @copyright  Copyright (c) 2010 - 2018 AdeoTEK
+ * @copyright  Copyright (c) 2012 - 2018 AdeoTEK
  * @license    LICENSE.md
  * @version    1.5.0
  * @filesource
@@ -278,6 +278,7 @@
 		 * @param  string $file Custom log file complete name (path + name)
 		 * @param  string $script_name Name of the file that sent the message to log (optional)
 		 * @return bool|string Returns TRUE for success or error message on failure
+		 * @throws \AException
 		 * @access public
 		 * @static
 		 */
@@ -285,7 +286,7 @@
 			$lf = strlen($file) ? $file : 'unknown.log';
 			try {
 				$lfile = fopen($lf,'a');
-				if(!$lfile) { throw new AException("Unable to open log file [{$file}]!",E_WARNING,1); }
+				if(!$lfile) { throw new \AException("Unable to open log file [{$file}]!",E_WARNING,1); }
 				if(is_array($msg) && count($msg)>0) {
 					$script_name = (array_key_exists('file',$msg) && strlen($msg['file'])) ? $msg['file'] : (strlen($script_name) ? $script_name : __FILE__);
 					$script_name .= (array_key_exists('line',$msg) && strlen($msg['line'])) ? ' (ln: '.$msg['line'].')' : '';
@@ -299,7 +300,7 @@
 				fwrite($lfile,'#'.date('Y-m-d H:i:s')."# <{$script_name}>{$type} {$message}\n");
 				fclose($lfile);
 				return TRUE;
-			} catch(AException $e) {
+			} catch(\AException $e) {
 				return $e->getMessage();
 			}//END try
 		}//END public static function AddToLog

@@ -6,16 +6,17 @@
  *
  * @package    AdeoTEK\PAF
  * @author     George Benjamin-Schonberger
- * @copyright  Copyright (c) 2010 - 2018 AdeoTEK
+ * @copyright  Copyright (c) 2012 - 2018 AdeoTEK
  * @license    LICENSE.md
  * @version    1.5.0
  * @filesource
  */
- 	define('PAF_URL_FORMAT_FRIENDLY_ORIGINAL',-1);
- 	define('PAF_URL_FORMAT_URI_ONLY',0);
-	define('PAF_URL_FORMAT_FRIENDLY',1);
-	define('PAF_URL_FORMAT_FULL',2);
-	define('PAF_URL_FORMAT_SHORT',3);
+	namespace PAF;
+ 	define('URL_FORMAT_FRIENDLY_ORIGINAL',-1);
+ 	define('URL_FORMAT_URI_ONLY',0);
+	define('URL_FORMAT_FRIENDLY',1);
+	define('URL_FORMAT_FULL',2);
+	define('URL_FORMAT_SHORT',3);
 	/**
 	 * PAF main class.
 	 *
@@ -30,7 +31,7 @@
 		 * @access protected
 		 * @static
 		 */
-		protected static $_app_instance = NULL;
+		protected static $_aapp_instance = NULL;
 		/**
 		 * @var        string The path included in the application URL
 		 * @access     protected
@@ -63,7 +64,7 @@
 		 * @var    bool State of session before current request (TRUE for existing session or FALSE for newly initialized)
 		 * @access protected
 		 */
-		protected $_app_state = FALSE;
+		protected $_aapp_state = FALSE;
 		/**
 		 * @var    bool Flag for cleaning session data (if is set to TRUE, the session data will be erased on commit)
 		 * @access protected
@@ -80,7 +81,7 @@
 		 */
 		public $debugger = NULL;
 		/**
-		 * @var    PAFReq Object for ajax requests processing
+		 * @var    \PAF\ARequest Object for ajax requests processing
 		 * @access public
 		 */
 		public $areq = NULL;
@@ -154,7 +155,6 @@
 		 * @access public
 		 */
 		public $url_virtual_path = NULL;
-
 		/**
 		 * Magic method for accessing non-static public members with static call
 		 *
@@ -164,30 +164,30 @@
 		 * @param  string $name Name of the member to be accessed
 		 * @param  array  $arguments The arguments for accessing methods
 		 * @return mixed Returns the property or method result
-		 * @throws AException|InvalidArgumentException
+		 * @throws \AException|\InvalidArgumentException
 		 * @access public
 		 * @static
 		 */
 		public static function __callStatic($name,$arguments) {
 			$class = get_called_class();
-			if(!is_object(self::$_app_instance)) { throw new AException("Invalid class [{$class}] instance",E_ERROR); }
-			// self::$_app_instance->Dlog($name,'__callStatic:name');
-			// self::$_app_instance->Dlog($class,'__callStatic:class');
+			if(!is_object(self::$_aapp_instance)) { throw new AException("Invalid class [{$class}] instance",E_ERROR); }
+			// self::$_aapp_instance->Dlog($name,'__callStatic:name');
+			// self::$_aapp_instance->Dlog($class,'__callStatic:class');
 			$reflector = new \ReflectionClass($class);
 			if(strpos($name,'_')!==0) {
 				$member = $name;
-				// self::$_app_instance->Dlog($member,'__callStatic:property');
+				// self::$_aapp_instance->Dlog($member,'__callStatic:property');
 				if($reflector->hasProperty($member)) {
 					$property = $reflector->getProperty($member);
-					if(!$property->isStatic() && $property->isPublic()) { return self::$_app_instance->{$member}; }
+					if(!$property->isStatic() && $property->isPublic()) { return self::$_aapp_instance->{$member}; }
 				}//if($reflector->hasProperty($member))
 			} else {
 				$member = substr($name,1);
-				// self::$_app_instance->Dlog($member,'__callStatic:method');
+				// self::$_aapp_instance->Dlog($member,'__callStatic:method');
 				if($reflector->hasMethod($member)) {
 					$method = $reflector->getMethod($member);
 					if(!$method->isStatic() && $method->isPublic()) {
-						// self::$_app_instance->Dlog($arguments,'__callStatic:arguments');
+						// self::$_aapp_instance->Dlog($arguments,'__callStatic:arguments');
 						if(preg_match('/^[DWEI]log$/i',$member) && (self::$console_show_file===TRUE || (isset($arguments[2]) && $arguments[2]===TRUE))) {
 							$dbg = debug_backtrace();
 							$caller = array_shift($dbg);
@@ -197,8 +197,8 @@
 						} else {
 							$larguments = $arguments;
 						}//if(in_array($method,['Dlog','Wlog','Elog','Ilog']) && (self::$console_show_file===TRUE || (isset($arguments[2]) && $arguments[2]===TRUE)))
-						// self::$_app_instance->Dlog($larguments,'__callStatic:$larguments');
-						return call_user_func_array(array(self::$_app_instance,$member),$larguments);
+						// self::$_aapp_instance->Dlog($larguments,'__callStatic:$larguments');
+						return call_user_func_array(array(self::$_aapp_instance,$member),$larguments);
 					}//if(!$method->isStatic() && $method->isPublic())
 				}//if($reflector->hasMethod($member))
 			}//if(strpos($name,'_')!==0)
@@ -256,21 +256,21 @@
 				self::$initial_data = self::$data;
 				if(self::$async_session && $ajax) { self::SessionClose(); }
 			}//if($session_init && !self::$session_started)
-			if(is_null(self::$_app_instance)) {
+			if(is_null(self::$_aapp_instance)) {
 				$class_name = get_called_class();
-				self::$_app_instance = new $class_name($ajax,$params,$session_init,$do_not_keep_alive,$shell);
-			}//if(is_null(self::$_app_instance))
-			return self::$_app_instance;
+				self::$_aapp_instance = new $class_name($ajax,$params,$session_init,$do_not_keep_alive,$shell);
+			}//if(is_null(self::$_aapp_instance))
+			return self::$_aapp_instance;
 		}//END public static function GetInstance
 		/**
 		 * Method for returning the static instance property
 		 *
-		 * @return object Returns the value of $_app_instance property
+		 * @return object Returns the value of $_aapp_instance property
 		 * @access public
 		 * @static
 		 */
 		public static function GetCurrentInstance() {
-			return self::$_app_instance;
+			return self::$_aapp_instance;
 		}//END public static function GetCurrentInstance
 		/**
 		 * Static setter for phash property
@@ -281,7 +281,7 @@
 		 * @static
 		 */
 		public static function SetPhash($value) {
-			self::$_app_instance->phash = $value;
+			self::$_aapp_instance->phash = $value;
 		}//END public static function SetPhash
 		/**
 		 * Convert a string to the session keys case (set in configuration)
@@ -319,7 +319,7 @@
 		 */
 		public static function ConfigAndStartSession($absolute_path,$domain,$session_id = NULL) {
 			self::$session_started = FALSE;
-			ErrorHandler::$silent_mode = TRUE;
+			if(class_exists('ErrorHandler')) { ErrorHandler::$silent_mode = TRUE; }
 			$errors = [];
 			$dbg_data = '';
 			ini_set('session.use_cookies',1);
@@ -342,10 +342,10 @@
 					} catch(Exception $e) {
 						$errors[] = ['errstr'=>$e->getMessage(),'errno'=>$e->getCode(),'errfile'=>$e->getFile(),'errline'=>$e->getLine()];
 					} finally {
-						if(ErrorHandler::HasErrors()) {
+						if(class_exists('ErrorHandler') && ErrorHandler::HasErrors()) {
 							$eh_errors = ErrorHandler::GetErrors(TRUE);
 							$errors = array_merge($errors,$eh_errors);
-						}//if(ErrorHandler::HasErrors())
+						}//if(class_exists('ErrorHandler') && ErrorHandler::HasErrors())
 						if(count($errors)>0) {
 							self::$session_started = FALSE;
 							self::AddToLog(print_r($errors,1),$absolute_path.self::$logs_path.'/'.self::$errors_log_file);
@@ -373,10 +373,10 @@
 					} catch(Exception $e) {
 						$errors[] = ['errstr'=>$e->getMessage(),'errno'=>$e->getCode(),'errfile'=>$e->getFile(),'errline'=>$e->getLine()];
 					} finally {
-						if(ErrorHandler::HasErrors()) {
+						if(class_exists('ErrorHandler') && ErrorHandler::HasErrors()) {
 							$eh_errors = ErrorHandler::GetErrors(TRUE);
 							$errors = array_merge($errors,$eh_errors);
-						}//if(ErrorHandler::HasErrors())
+						}//if(class_exists('ErrorHandler') && ErrorHandler::HasErrors())
 						if(count($errors)>0) {
 							self::$session_started = FALSE;
 							self::AddToLog(print_r($errors,1),$absolute_path.self::$logs_path.'/'.self::$errors_log_file);
@@ -400,10 +400,10 @@
 					} catch(Exception $e) {
 						$errors[] = ['errstr'=>$e->getMessage(),'errno'=>$e->getCode(),'errfile'=>$e->getFile(),'errline'=>$e->getLine()];
 					} finally {
-						if(ErrorHandler::HasErrors()) {
+						if(class_exists('ErrorHandler') && ErrorHandler::HasErrors()) {
 							$eh_errors = ErrorHandler::GetErrors(TRUE);
 							$errors = array_merge($errors,$eh_errors);
-						}//if(ErrorHandler::HasErrors())
+						}//if(class_exists('ErrorHandler') && ErrorHandler::HasErrors())
 						if(count($errors)>0) {
 							self::$session_started = FALSE;
 							self::AddToLog(print_r($errors,1),$absolute_path.self::$logs_path.'/'.self::$errors_log_file);
@@ -415,7 +415,7 @@
 					}//try
 				}//if(class_exists('Memcached',FALSE))
 			}//if(!$initialized && self::$session_memcached===TRUE)
-			ErrorHandler::$silent_mode = FALSE;
+			if(class_exists('ErrorHandler')) { ErrorHandler::$silent_mode = FALSE; }
 			if(!self::$session_started) {
 				ini_set('session.save_handler','files');
 				if(strlen(self::$session_file_path)>0) {
@@ -858,11 +858,11 @@
 		 */
 		public function ARequestInit($post_params = array(),$subsession = NULL,$js_init = TRUE,$with_output = TRUE) {
 			if(!is_object($this->areq)) {
-				$this->areq = new PAFReq($this,$subsession);
+				$this->areq = new ARequest($this,$subsession);
 				$this->areq->SetPostParams($post_params);
 			}//if(!is_object($this->areq))
 			if($js_init!==TRUE) { return TRUE; }
-			return $this->areq->jsInit($with_output);
+			return $this->areq->JsInit($with_output);
 		}//END public function ARequestInit
 		/**
 		 * Execute a method of the ARequest implementing class in an ajax request
@@ -904,7 +904,7 @@
 				/* Get function name and process file */
 				$REQ = $requests[self::ConvertToSessionCase($request_id,PAFReq::$paf_session_keys_case)];
 				$with_utf8 = $REQ[self::ConvertToSessionCase('UTF8',PAFReq::$paf_session_keys_case)];
-				$function = $REQ[self::ConvertToSessionCase('FUNCTION',PAFReq::$paf_session_keys_case)];
+				$method = $REQ[self::ConvertToSessionCase('METHOD',PAFReq::$paf_session_keys_case)];
 				$lkey = self::ConvertToSessionCase('CLASS_FILE',PAFReq::$paf_session_keys_case);
 				$class_file = (array_key_exists($lkey,$REQ) && $REQ[$lkey]) ? $REQ[$lkey] : (self::$paf_class_file ? self::$paf_class_file : $this->app_path.self::$paf_class_file_path.'/'.self::$paf_class_file_name);
 				$lkey = self::ConvertToSessionCase('CLASS',PAFReq::$paf_session_keys_case);
@@ -920,7 +920,7 @@
 					$this->areq = new $class($this,$subsession);
 					$this->areq->SetPostParams($post_params);
 					$this->areq->SetUtf8($with_utf8);
-					$errors = $this->areq->RunFunc($function,$php);
+					$errors = $this->areq->ExecuteRequest($method,$php);
 					$this->SessionCommit(NULL,TRUE);
 					if($this->areq->HasActions()) { echo $this->areq->Send(); }
 					$content = $this->GetOutputBufferContent();
@@ -930,7 +930,7 @@
 				echo $this->areq->GetUtf8() ? $content : utf8_encode($content);
 				//$this->ClearOutputBuffer(TRUE);
 			} else {
-				XSession::AddToLog(array('type'=>'error','message'=>$errors,'no'=>-1,'file'=>__FILE__,'line'=>__LINE__),$this->app_path.self::$logs_path.'/'.self::$errors_log_file);
+				AApp::AddToLog(array('type'=>'error','message'=>$errors,'no'=>-1,'file'=>__FILE__,'line'=>__LINE__),$this->app_path.self::$logs_path.'/'.self::$errors_log_file);
 				$this->RedirectOnError();
 			}//if(!$errors)
 		}//END public function ExecuteARequest
@@ -942,7 +942,7 @@
 		 */
 		protected function RedirectOnError() {
 			if($this->ajax) {
-				echo PAFReq::$paf_act_separator.'window.location.href = "'.$this->app_web_link.'";';
+				echo ARequest::$paf_act_separator.'window.location.href = "'.$this->app_web_link.'";';
 			} else {
 				header('Location:'.$this->app_web_link);
 			}//if($this->ajax)
@@ -1142,10 +1142,10 @@
 		 * @return void return description
 		 * @access public
 		 */
-		public function GetBaseUrl($url_format = PAF_URL_FORMAT_FRIENDLY,$params = NULL) {
-			$lurl_format = self::$x_mod_rewrite ? $url_format : PAF_URL_FORMAT_SHORT;
+		public function GetBaseUrl($url_format = URL_FORMAT_FRIENDLY,$params = NULL) {
+			$lurl_format = self::$x_mod_rewrite ? $url_format : URL_FORMAT_SHORT;
 			switch($lurl_format) {
-				case PAF_URL_FORMAT_FRIENDLY:
+				case URL_FORMAT_FRIENDLY:
 					$lang = NULL;
 					$urlid = NULL;
 					$urlpath = NULL;
@@ -1161,13 +1161,13 @@
 					}//if(is_null($urlid))
 					$ns_link_alias = get_array_param($this->globals,'domain_registry','','is_string','link_alias');
 					return $this->app_web_link.'/'.(strlen($this->url_virtual_path) ? $this->url_virtual_path.'/' : '').(strlen($lang) ? $lang.'/' : '').(strlen(trim($urlid,'/')) ? trim($urlid,'/').'/' : '');
-				case PAF_URL_FORMAT_FRIENDLY_ORIGINAL:
+				case URL_FORMAT_FRIENDLY_ORIGINAL:
 					return $this->url_base;
-				case PAF_URL_FORMAT_FULL:
+				case URL_FORMAT_FULL:
 					return $this->app_web_link.'/index.php';
-				case PAF_URL_FORMAT_SHORT:
+				case URL_FORMAT_SHORT:
 					return $this->app_web_link.'/';
-				case PAF_URL_FORMAT_URI_ONLY:
+				case URL_FORMAT_URI_ONLY:
 				default:
 					return '';
 			}//END switch
@@ -1179,7 +1179,7 @@
 		 * @return void return description
 		 * @access public
 		 */
-		public function GetUrl($params = NULL,$rparams = NULL,$url_format = PAF_URL_FORMAT_FRIENDLY) {
+		public function GetUrl($params = NULL,$rparams = NULL,$url_format = URL_FORMAT_FRIENDLY) {
 			$data = $this->url_data;
 			if(is_array($rparams) && count($rparams)) {
 				foreach($rparams as $key=>$value) {
@@ -1201,10 +1201,10 @@
 		 * @return void return description
 		 * @access public
 		 */
-		public function GetNewUrl($params = NULL,$url_format = PAF_URL_FORMAT_FRIENDLY) {
+		public function GetNewUrl($params = NULL,$url_format = URL_FORMAT_FRIENDLY) {
 			$result = '';
 			$anchor = '';
-			$lurl_format = self::$x_mod_rewrite ? $url_format : PAF_URL_FORMAT_SHORT;
+			$lurl_format = self::$x_mod_rewrite ? $url_format : URL_FORMAT_SHORT;
 			if(is_array($params) && count($params)) {
 				$first = TRUE;
 				foreach($params as $k=>$v) {
@@ -1212,7 +1212,7 @@
 						$anchor = $this->UrlParamToString($v);
 						continue;
 					}//if($k=='anchor')
-					if(($lurl_format==PAF_URL_FORMAT_FRIENDLY || $lurl_format==PAF_URL_FORMAT_FRIENDLY_ORIGINAL) && in_array($k,$this->special_url_params)) { continue; }
+					if(($lurl_format==URL_FORMAT_FRIENDLY || $lurl_format==URL_FORMAT_FRIENDLY_ORIGINAL) && in_array($k,$this->special_url_params)) { continue; }
 					$val = $this->UrlParamToString($v);
 					if(in_array($k,$this->special_url_params) && !$val) { continue; }
 					$prefix = '&';
@@ -1251,9 +1251,9 @@
 		 * @access public
 		 */
 	    public function DebuggerStart() {
-			if(self::$debug!==TRUE || !class_exists('PAFDebugger')) { return FALSE; }
+			if(self::$debug!==TRUE || !class_exists('ADebugger')) { return FALSE; }
 			if(is_object($this->debugger)) { return $this->debugger->IsEnabled(); }
-			$this->debugger = new PAFDebugger(self::$debug,_X_ROOT_PATH.self::GetPafPath().'/debug',_X_ROOT_PATH._X_APP_PATH.self::$logs_path,_X_ROOT_PATH._X_APP_PATH.'/tmp');
+			$this->debugger = new ADebugger(self::$debug,_X_ROOT_PATH.self::GetPafPath().'/debug',_X_ROOT_PATH._X_APP_PATH.self::$logs_path,_X_ROOT_PATH._X_APP_PATH.'/tmp');
 			$this->debugger->phpconsole_password = self::$phpconsole_password;
 			$this->debugger->log_file = self::$log_file;
 			$this->debugger->errors_log_file = self::$errors_log_file;
@@ -1268,8 +1268,8 @@
 		 * @static
 		 */
 	    public static function GetDebuggerState() {
-			if(!is_object(self::$_app_instance)) { return FALSE; }
-			return is_object(self::$_app_instance->debugger);
+			if(!is_object(self::$_aapp_instance)) { return FALSE; }
+			return is_object(self::$_aapp_instance->debugger);
 	    }//END public static function GetDebuggerState
 		/**
 		 * Displays a value in the debugger plug-in as a debug message
@@ -1288,7 +1288,7 @@
 				$caller = array_shift($dbg);
 				$label = (isset($caller['file']) ? ('['.($path===TRUE ? $caller['file'] : basename($caller['file'])).(isset($caller['line']) ? ':'.$caller['line'] : '').']') : '').$label;
 			}//if(self::$console_show_file===TRUE || $file===TRUE)
-			$this->debugger->Debug($value,$label,PAF_DBG_DEBUG);
+			$this->debugger->Debug($value,$label,DBG_DEBUG);
 		}//END public function Dlog
 		/**
 		 * Displays a value in the debugger plug-in as a warning message
@@ -1307,7 +1307,7 @@
 				$caller = array_shift($dbg);
 				$label = (isset($caller['file']) ? ('['.($path===TRUE ? $caller['file'] : basename($caller['file'])).(isset($caller['line']) ? ':'.$caller['line'] : '').']') : '').$label;
 			}//if(self::$console_show_file===TRUE || $file===TRUE)
-			$this->debugger->Debug($value,$label,PAF_DBG_WARNING);
+			$this->debugger->Debug($value,$label,DBG_WARNING);
 		}//END public function Wlog
 		/**
 		 * Displays a value in the debugger plug-in as an error message
@@ -1326,7 +1326,7 @@
 				$caller = array_shift($dbg);
 				$label = (isset($caller['file']) ? ('['.($path===TRUE ? $caller['file'] : basename($caller['file'])).(isset($caller['line']) ? ':'.$caller['line'] : '').']') : '').$label;
 			}//if(self::$console_show_file===TRUE || $file===TRUE)
-			$this->debugger->Debug($value,$label,PAF_DBG_ERROR);
+			$this->debugger->Debug($value,$label,DBG_ERROR);
 		}//END public function Elog
 		/**
 		 * Displays a value in the debugger plug-in as an info message
@@ -1345,7 +1345,7 @@
 				$caller = array_shift($dbg);
 				$label = (isset($caller['file']) ? ('['.($path===TRUE ? $caller['file'] : basename($caller['file'])).(isset($caller['line']) ? ':'.$caller['line'] : '').']') : '').$label;
 			}//if(self::$console_show_file===TRUE || $file===TRUE)
-			$this->debugger->Debug($value,$label,PAF_DBG_INFO);
+			$this->debugger->Debug($value,$label,DBG_INFO);
 		}//END public function Ilog
 		/**
 		 * Writes a message in one of the application log files
@@ -1361,12 +1361,12 @@
 			$lpath = (is_string($path) && strlen($path) ? rtrim($path,'/') : _X_ROOT_PATH._X_APP_PATH.self::$logs_path).'/';
 			switch(strtolower($type)) {
 				case 'error':
-					return PAFDebugger::AddToLog($msg,$lpath.(strlen($file) ? $file : self::$errors_log_file));
+					return ADebugger::AddToLog($msg,$lpath.(strlen($file) ? $file : self::$errors_log_file));
 				case 'debug':
-					return PAFDebugger::AddToLog($msg,$lpath.(strlen($file) ? $file : self::$debugging_log_file));
+					return ADebugger::AddToLog($msg,$lpath.(strlen($file) ? $file : self::$debugging_log_file));
 				case 'log':
 				default:
-					return PAFDebugger::AddToLog($msg,$lpath.(strlen($file) ? $file : self::$log_file));
+					return ADebugger::AddToLog($msg,$lpath.(strlen($file) ? $file : self::$log_file));
 			}//switch(strtolower($type))
 		}//END public function WriteToLog
 		/**
@@ -1380,7 +1380,7 @@
 		 * @static
 		 */
 		public static function AddToLog($msg,$file = '',$script_name = '') {
-			return PAFDebugger::AddToLog($msg,$file,$script_name);
+			return ADebugger::AddToLog($msg,$file,$script_name);
 		}//END public static function AddToLog
 		/**
 		 * Starts a debug timer
@@ -1391,7 +1391,7 @@
 		 * @static
 		 */
 		public static function TimerStart($name) {
-			return PAFDebugger::TimerStart($name);
+			return ADebugger::TimerStart($name);
 		}//END public static function TimerStart
 		/**
 		 * Displays a debug timer elapsed time
@@ -1403,7 +1403,7 @@
 		 * @static
 		 */
 		public static function TimerShow($name,$stop = TRUE) {
-			return PAFDebugger::TimerShow($name,$stop);
+			return ADebugger::TimerShow($name,$stop);
 		}//END public static function TimerStart
-	}//END class PAFApp extends AAppConfig
+	}//END class AApp extends AAppConfig
 ?>
