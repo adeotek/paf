@@ -14,19 +14,19 @@
  * @filesource
  */
 	namespace PAF;
-	if(!defined('_X_VREQ') || _X_VREQ!==TRUE) { die('Invalid request!'); }
+	if(!defined('_VALID_AAPP_REQ') || _VALID_AAPP_REQ!==TRUE) { die('Invalid request!'); }
 	/** Require files for application startup */
-	require_once(_X_ROOT_PATH.AAppConfig::GetPafPath().'/helpers.php');
+	require_once(_AAPP_ROOT_PATH.AAppConfig::GetAAppRelativePath().'/helpers.php');
 	if(version_compare(PHP_VERSION,'7.0.0')<0) {
-		// require_once(_X_ROOT_PATH.AAppConfig::GetPafPath().'/random_compat.phar');
-		require_once(_X_ROOT_PATH.AAppConfig::GetPafPath().'/GibberishAES_5x.php');
+		// require_once(_AAPP_ROOT_PATH.PAFConfig::GetAAppRelativePath().'/random_compat.phar');
+		require_once(_AAPP_ROOT_PATH.AAppConfig::GetAAppRelativePath().'/GibberishAES_5x.php');
 	} else {
-	require_once(_X_ROOT_PATH.AAppConfig::GetPafPath().'/GibberishAES.php');
+	require_once(_AAPP_ROOT_PATH.AAppConfig::GetAAppRelativePath().'/GibberishAES.php');
 	}//if(version_compare(PHP_VERSION,'7.0.0')<0)
-	require_once(_X_ROOT_PATH.AAppConfig::GetPafPath().'/AException.php');
-	require_once(_X_ROOT_PATH.AAppConfig::GetPafPath().'/ADebugger.php');
-	require_once(_X_ROOT_PATH.AAppConfig::GetPafPath().'/AApp.php');
-	require_once(_X_ROOT_PATH.AAppConfig::GetPafPath().'/ARequest.php');
+	require_once(_AAPP_ROOT_PATH.AAppConfig::GetAAppRelativePath().'/AException.php');
+	require_once(_AAPP_ROOT_PATH.AAppConfig::GetAAppRelativePath().'/ADebugger.php');
+	require_once(_AAPP_ROOT_PATH.AAppConfig::GetAAppRelativePath().'/AApp.php');
+	require_once(_AAPP_ROOT_PATH.AAppConfig::GetAAppRelativePath().'/ARequest.php');
 	/**
 	 * User global constants and required files load
 	 *
@@ -36,9 +36,9 @@
 	//END User global required files load
 	//END Require files for application startup
 	/** Register class autoload custom method */
-	if(!defined('X_REGISTER_AUTOLOADER') || X_REGISTER_AUTOLOADER!==FALSE) {
-		spl_autoload_register('XSession::XAutoload',TRUE,TRUE);
-	}//if(!defined('X_REGISTER_AUTOLOADER') || X_REGISTER_AUTOLOADER!==FALSE)
+	if(!defined('_AAPP_REGISTER_AUTOLOADER') || _AAPP_REGISTER_AUTOLOADER!==FALSE) {
+		spl_autoload_register('NApp::_Autoload',TRUE,TRUE);
+	}//if(!defined('_AAPP_REGISTER_AUTOLOADER') || _AAPP_REGISTER_AUTOLOADER!==FALSE)
 	/**
 	 * AAppConfig is the configuration holder for PAF
 	 *
@@ -128,7 +128,7 @@
 		 * @access     public
 		 * @static
 		 */
-		public static $x_session_name = 'PHPSESSIONID';
+		public static $x_session_name = 'PHPSESSID';
 		/**
 		 * @var        boolean Use session splitting by window.name or not
 		 * @access     public
@@ -146,7 +146,7 @@
 		 * @access     public
 		 * @static
 		 */
-		public static $session_timeout = 1800;
+		public static $session_timeout = 3600;
 		/**
 		 * @var        boolean Use memcached for session storage
 		 * @access     public
@@ -252,12 +252,6 @@
 		 */
 		public static $paf_areq_js_callbak = NULL;
 		/**
-		 * @var        boolean utf8 support on/off
-		 * @access     public
-		 * @static
-		 */
-		public static $paf_utf8 = TRUE;
-		/**
 		 * @var        boolean Secure http support on/off
 		 * @access     protected
 		 * @static
@@ -340,32 +334,32 @@
 		 * @access     public
 		 * @static
 		 */
-		public static function GetPafPath() {
-			return ((self::$paf_location=='public' ? _X_WEB_ROOT_PATH._X_PUBLIC_PATH : _X_APP_PATH).self::$paf_path);
-		}//END public static function GetPafPath
+		public static function GetAAppRelativePath() {
+			return ((self::$paf_location=='public' ? _AAP_PUBLIC_ROOT_PATH._AAP_PUBLIC_PATH : _AAPP_APPLICATION_PATH).self::$paf_path);
+		}//END public static function GetAAppRelativePath
 		/**
-		 * GenerateUID function generates a UID (unique id)
+		 * GetNewUID method generates a new unique ID
 		 *
-		 * @param      string $salt A string to be added as salt to the generated unique id (NULL and empty string means no salt will be used)
-		 * @param      string $algorithm The name of the algorithm used for GUID generation (possible values are those in hash_algos() array - see: http://www.php.net/manual/en/function.hash-algos.php)
+		 * @param      string $salt A string to be added as salt to the generated unique ID (NULL and empty string means no salt will be used)
+		 * @param      string $algorithm The name of the algorithm used for unique ID generation (possible values are those in hash_algos() array - see: http://www.php.net/manual/en/function.hash-algos.php)
 		 * @param      bool $raw Sets return type: hexits for FALSE (default) or raw binary for TRUE
-		 * @return     string Returns an unique id (UID) as lowercase hex or raw binary representation if $raw is set to TRUE.
+		 * @return     string Returns an unique ID as lowercase hex or raw binary representation if $raw is set to TRUE.
 		 * @access     public
 		 * @static
 		 */
-		public static function GenerateUID($salt = NULL,$algorithm = 'sha1',$notime = FALSE,$raw = FALSE) {
+		public static function GetNewUID($salt = NULL,$algorithm = 'sha1',$notime = FALSE,$raw = FALSE) {
 			if($notime) { return hash($algorithm,$salt,$raw); }
 			return hash($algorithm,((is_string($salt) && strlen($salt)>0) ? $salt : '').uniqid(microtime().rand(),TRUE),$raw);
-		}//END public static function GenerateUID
+		}//END public static function GetNewUID
 		/**
-		 * Custom class autoload method
+		 * Custom class autoloader method
 		 *
 		 * @param      string $class Called class name
 		 * @return     void
 		 * @access     public
 		 * @static
 		 */
-		public static function XAutoload($class) {
+		public static function _Autoload($class) {
 			global $_CLASSES_REGISTRY;
 			if(strpos($class,'\\')!==FALSE) {
 				$class_arr = explode('\\',$class);
@@ -374,12 +368,12 @@
 				$fname = $class_arr[count($class_arr)-1];
 				$npath = '';
 				for($i=1;$i<count($class_arr)-2;$i++) { $npath .= (strlen($npath) ? '/' : '').$class_arr[$i]; }
-				require_once(_X_ROOT_PATH._X_APP_PATH.'/'.(strlen($fpath) ? $fpath.'/' : '').(strlen($npath) ? $npath.'/' : '').$fname.'.php');
+				require_once(_AAPP_ROOT_PATH._AAPP_APPLICATION_PATH.'/'.(strlen($fpath) ? $fpath.'/' : '').(strlen($npath) ? $npath.'/' : '').$fname.'.php');
 				return TRUE;
 			}//if(strpos($class,'\\')!==FALSE)
 			if(substr($class,-3)=='Pdf') {
 				$bclass = substr($class,0,-3);
-				require_once(_X_ROOT_PATH._X_APP_PATH._X_CONFIG_PATH.'/registries/modules_registry.inc');
+				require_once(_AAPP_ROOT_PATH._AAPP_APPLICATION_PATH._AAPP_CONFIG_PATH.'/registries/ModulesRegistry.inc');
 				if(isset($_MODULES_REGISTRY) && is_array($_MODULES_REGISTRY) && array_key_exists($bclass,$_MODULES_REGISTRY)) {
 					$ns = get_array_param($_MODULES_REGISTRY,$bclass,'','is_string','namespace');
 					$subfolder = get_array_param($_MODULES_REGISTRY,$bclass,'','is_string','subfolder');
@@ -389,15 +383,15 @@
 					if(strlen($subfolder)) { $fpath .= $subfolder.'/'; }
 					$fpath .= $bclass.'/';
 					if(strlen($tfolder)) { $fpath .= $tfolder.'/'; }
-					require_once(_X_ROOT_PATH._X_APP_PATH.'/'.$fpath.$class.'.php');
+					require_once(_AAPP_ROOT_PATH._AAPP_APPLICATION_PATH.'/'.$fpath.$class.'.php');
 					return TRUE;
 				}//if(isset($_MODULES_REGISTRY) && is_array($_MODULES_REGISTRY) && array_key_exists($bclass,$_MODULES_REGISTRY))
 			}//if(substr($class,-3)=='Pdf')
 			if(!array_key_exists($class,$_CLASSES_REGISTRY)) { return FALSE; }
 			$fpath = trim(get_array_param($_CLASSES_REGISTRY,$class,'','is_string','path'),'/');
 			$fname = trim(get_array_param($_CLASSES_REGISTRY,$class,$class,'is_notempty_string','name'),'/');
-			require_once(_X_ROOT_PATH._X_APP_PATH.'/'.(strlen($fpath) ? $fpath.'/' : '').$fname.'.php');
+			require_once(_AAPP_ROOT_PATH._AAPP_APPLICATION_PATH.'/'.(strlen($fpath) ? $fpath.'/' : '').$fname.'.php');
 			return TRUE;
-		}//END public static function XAutoload
+		}//END public static function _Autoload
 	}//END abstract class AAppConfig
 ?>

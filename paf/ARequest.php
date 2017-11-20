@@ -127,7 +127,7 @@
 			if(strlen($lpafi)) {
 				$this->pafi = $lpafi;
 			} else {
-				$this->pafi = self::GenerateUID();
+				$this->pafi = self::GetNewUID();
 				$this->aapp_object->SetGlobalParam(AApp::ConvertToSessionCase('PAF_PAFI',self::$paf_session_keys_case),$this->pafi,FALSE,$this->subsession,FALSE);
 			}//if(strlen($lpafi))
 			$this->StartSecureHttp();
@@ -149,7 +149,7 @@
 			if(!self::$paf_secure_http) { return; }
 			$this->paf_http_key = $this->aapp_object->GetGlobalParam(AApp::ConvertToSessionCase('PAF_HTTPK',self::$paf_session_keys_case),FALSE,$this->subsession,FALSE);
 			if(!strlen($this->paf_http_key)) {
-				$this->paf_http_key = self::GenerateUID(self::$session_key,'sha256');
+				$this->paf_http_key = self::GetNewUID(self::$session_key,'sha256');
 				$this->aapp_object->SetGlobalParam(AApp::ConvertToSessionCase('PAF_HTTPK',self::$paf_session_keys_case),$this->paf_http_key,FALSE,$this->subsession,FALSE);
 			}//if(!strlen($this->paf_http_key))
 		}//END protected function StartSecureHttp
@@ -381,7 +381,7 @@
 					if(!$targetProperty) { $targetProperty = 'innerHTML'; }
 					if(!$targets) { $action = $targetProperty = $targetId = ''; }
 					if($function) {
-						$request_id = self::GenerateUID($function.$this->pafi,'sha256',TRUE);
+						$request_id = self::GetNewUID($function.$this->pafi,'sha256',TRUE);
 						if($class_file || $class_name || $this->custom_class) {
 							$class_file = $class_file ? $class_file : $this->GetClassFile();
 							$class_name = $class_name ? $class_name : $this->GetClassName();

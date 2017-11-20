@@ -107,7 +107,7 @@
 						if($dv['active']!==TRUE) { continue; }
 						if($dk=='PhpConsole') {
 							require_once(rtrim($path,'/').'/'.$dk.'/__autoload.php');
-							// $tmp_path = _X_ROOT_PATH.'/../';
+							// $tmp_path = _AAPP_ROOT_PATH.'/../';
 							\PhpConsole\Connector::setPostponeStorage(new \PhpConsole\Storage\File((strlen($tmp_path) ? rtrim($tmp_path,'/') : rtrim($path,'/')).'/phpcons.data'));
 							$this->debug_objects[$dk] = \PhpConsole\Connector::getInstance();
 							if(\PhpConsole\Connector::getInstance()->isActiveClient()) {

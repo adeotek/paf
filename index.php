@@ -11,12 +11,12 @@
  * @version    1.5.0
  * @filesource
  */
-    define('_X_VREQ',TRUE);
-	require_once('pconfig.inc');
-	if(defined('_X_OFFLINE') && _X_OFFLINE) {
+    define('_VALID_AAPP_REQ',TRUE);
+	require_once('config_paths.inc');
+	if(defined('_AAPP_OFFLINE') && _AAPP_OFFLINE) {
 		require_once('offline.php');
 		die();
-	}//if(defined('_X_OFFLINE') && _X_OFFLINE)
+	}//if(defined('_AAPP_OFFLINE') && _AAPP_OFFLINE)
 	/* Let browser know that response is utf-8 encoded */
 	header('Content-Type: text/html; charset=UTF-8');
 	header('Cache-Control: no-cache, no-store, must-revalidate'); // HTTP 1.1.
@@ -27,7 +27,7 @@
 	if(in_array('globals',array_keys(array_change_key_case($_REQUEST,CASE_LOWER)))) { exit(); }
 	if(in_array('_post',array_keys(array_change_key_case($_REQUEST,CASE_LOWER)))) { exit(); }
 	if(array_key_exists('phpnfo',$_GET) && $_GET['phpnfo']==1) { phpinfo(); die(); }
-	require_once(_X_ROOT_PATH._X_APP_PATH._X_CONFIG_PATH.'/configuration.php');
+	require_once(_AAPP_ROOT_PATH._AAPP_APPLICATION_PATH._AAPP_CONFIG_PATH.'/Configuration.php');
 	$app = PAF\AApp::GetInstance();
 	//Require html/php file
 	$app->SessionCommit();

@@ -196,26 +196,27 @@
 							$larguments = array((isset($arguments[0]) ? $arguments[0] : NULL),$label);
 						} else {
 							$larguments = $arguments;
-						}//if(in_array($method,['Dlog','Wlog','Elog','Ilog']) && (self::$console_show_file===TRUE || (isset($arguments[2]) && $arguments[2]===TRUE)))
+						}//if(preg_match('/^[DWEI]log$/i',$member) && (self::$console_show_file===TRUE || (isset($arguments[2]) && $arguments[2]===TRUE)))
 						// self::$_aapp_instance->Dlog($larguments,'__callStatic:$larguments');
 						return call_user_func_array(array(self::$_aapp_instance,$member),$larguments);
 					}//if(!$method->isStatic() && $method->isPublic())
 				}//if($reflector->hasMethod($member))
 			}//if(strpos($name,'_')!==0)
-			throw new InvalidArgumentException("Undefined or inaccessible property or method [{$member}]!");
+			throw new InvalidArgumentException("Undefined or inaccessible property/method [{$member}]!");
 		}//END public static function __callStatic
 		/**
 		 * Extracts the URL path of the application.
 		 *
+		 * @param      string $startup_path Entry point file absolute path
 		 * @return     string Returns the URL path of the application.
 		 * @access     protected
 		 * @static
 		 */
 		protected static function ExtractUrlPath($startup_path = NULL) {
 			if(strlen($startup_path)) {
-				self::$url_path = str_replace('\\','/',(str_replace(_X_ROOT_PATH._X_WEB_ROOT_PATH,'',$startup_path)));
+				self::$url_path = str_replace('\\','/',(str_replace(_AAPP_ROOT_PATH._AAP_PUBLIC_ROOT_PATH,'',$startup_path)));
 				self::$url_path = trim(str_replace(trim(self::$url_path,'/'),'',trim(dirname($_SERVER['SCRIPT_NAME']),'/')),'/');
-				self::$url_path = (strlen(self::$url_path) ? '/'.self::$url_path : '')._X_PUBLIC_PATH;
+				self::$url_path = (strlen(self::$url_path) ? '/'.self::$url_path : '')._AAP_PUBLIC_PATH;
 			} else {
 				self::$url_path = '/'.trim(dirname($_SERVER['SCRIPT_NAME']),'/');
 			}//if(strlen($startup_path))
@@ -446,7 +447,7 @@
 		public static function SessionStart($path = '',$do_not_keep_alive = NULL) {
 			$dbg_data = '>> '.(isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : 'console')."\n";
 			$dbg_data .= 'Session started: '.(self::$session_started ? 'TRUE' : 'FALSE')."\n";
-			$absolute_path = _X_ROOT_PATH._X_APP_PATH;
+			$absolute_path = _AAPP_ROOT_PATH._AAPP_APPLICATION_PATH;
 			$cremoteaddress = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '0.0.0.0';
 			$cdomain = strtolower((array_key_exists('HTTP_HOST',$_SERVER) && $_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'localhost');
 			$cfulldomain = $cdomain.$path;
@@ -456,7 +457,7 @@
 			$dbg_data .= 'Session age: '.(isset($_SESSION['X_SCAT']) ? (time()-$_SESSION['X_SCAT']) : 'N/A')."\n";
 			$dbg_data .= 'Last request: '.(isset($_SESSION['X_SEXT']) ? (time()-$_SESSION['X_SEXT']) : 'N/A')."\n";
 			$dbg_data .= 'X_SKEY: '.(isset($_SESSION['X_SKEY']) ? $_SESSION['X_SKEY'] : 'N/A')."\n";
-	        if(!isset($_SESSION['X_SEXT']) || !isset($_SESSION['X_SKEY']) || ($_SESSION['X_SEXT']+self::$session_timeout)<time() || $_SESSION['X_SKEY']!=self::GenerateUID(self::$session_key.session_id(),'sha256',TRUE)) {
+	        if(!isset($_SESSION['X_SEXT']) || !isset($_SESSION['X_SKEY']) || ($_SESSION['X_SEXT']+self::$session_timeout)<time() || $_SESSION['X_SKEY']!=self::GetNewUID(self::$session_key.session_id(),'sha256',TRUE)) {
 	            $dbg_data .= 'Do: SESSION RESET'."\n";
 	        	$_SESSION = array();
 			    setcookie(session_name(),'',time()-4200,'/',$cdomain);
@@ -466,14 +467,14 @@
 				ini_set('cookie_domain',$cdomain);
 				ini_set('session.gc_maxlifetime',self::$session_timeout);
 				ini_set('session.cache_expire',self::$session_timeout/60);
-				$new_session_id = self::GenerateUID($cfulldomain.$cuseragent.$cremoteaddress,'sha256');
+				$new_session_id = self::GetNewUID($cfulldomain.$cuseragent.$cremoteaddress,'sha256');
 				$dbg_data .= self::ConfigAndStartSession($absolute_path,$cdomain,$new_session_id);
 				$_SESSION['X_SCAT'] = time();
 				$_SESSION['SESSION_ID'] = session_id();
 				$dbg_data .= 'Session ID (new): '.session_id()."\n";
-			}//if(!isset($_SESSION['X_SEXT']) || !isset($_SESSION['X_SKEY']) || ($_SESSION['X_SEXT']+self::$session_timeout)<time() || $_SESSION['X_SKEY']!=self::GenerateUID(self::$session_key.session_id(),'sha256',TRUE))
+			}//if(!isset($_SESSION['X_SEXT']) || !isset($_SESSION['X_SKEY']) || ($_SESSION['X_SEXT']+self::$session_timeout)<time() || $_SESSION['X_SKEY']!=self::GetNewUID(self::$session_key.session_id(),'sha256',TRUE))
 			set_time_limit(self::$request_time_limit);
-			$_SESSION['X_SKEY'] = self::GenerateUID(self::$session_key.session_id(),'sha256',TRUE);
+			$_SESSION['X_SKEY'] = self::GetNewUID(self::$session_key.session_id(),'sha256',TRUE);
 			$dbg_data .= 'Do not keep alive: '.($do_not_keep_alive!==TRUE && $do_not_keep_alive!==1 ? 'FALSE' : 'TRUE')."\n";
 			if($do_not_keep_alive!==TRUE && $do_not_keep_alive!==1) { $_SESSION['X_SEXT'] = time(); }
 			// vprint($dbg_data);
@@ -508,9 +509,9 @@
 		 * @access protected
 		 */
 		protected function __construct($ajax = FALSE,$params = array(),$with_session = FALSE,$do_not_keep_alive = NULL,$shell = FALSE) {
-			$this->app_absolute_path = _X_ROOT_PATH;
-			$this->app_path = _X_ROOT_PATH._X_APP_PATH;
-			$this->app_public_path = _X_ROOT_PATH._X_WEB_ROOT_PATH._X_PUBLIC_PATH;
+			$this->app_absolute_path = _AAPP_ROOT_PATH;
+			$this->app_path = _AAPP_ROOT_PATH._AAPP_APPLICATION_PATH;
+			$this->app_public_path = _AAPP_ROOT_PATH._AAP_PUBLIC_ROOT_PATH._AAP_PUBLIC_PATH;
 			$this->ajax = $ajax;
 			$this->with_session = $with_session;
 			$this->keep_alive = $do_not_keep_alive ? FALSE : TRUE;
@@ -534,7 +535,7 @@
 					if(!$this->phash) {
 						$this->phash = is_array($_COOKIE) && array_key_exists('__x_pHash_',$_COOKIE) && strlen($_COOKIE['__x_pHash_']) && strlen($_COOKIE['__x_pHash_'])>12 ? substr($_COOKIE['__x_pHash_'],0,-12) : NULL;
 					}//if(!$this->phash)
-					if(!$this->phash ) { $this->phash = self::GenerateUID(); }
+					if(!$this->phash ) { $this->phash = self::GetNewUID(); }
 				}//if(self::$split_session_by_page)
 				$uri_len = strpos($_SERVER['REQUEST_URI'],'?')!==FALSE ? strpos($_SERVER['REQUEST_URI'],'?') : (strpos($_SERVER['REQUEST_URI'],'#')!==FALSE ? strpos($_SERVER['REQUEST_URI'],'#') : strlen($_SERVER['REQUEST_URI']));
 				$this->url_base = $this->app_web_protocol.$this->app_domain.substr($_SERVER['REQUEST_URI'],0,$uri_len);
@@ -1156,7 +1157,6 @@
 					if(is_null($urlid)) {
 						$urlid = array_key_exists('urlid',$this->url_data) ? $this->UrlParamToString($this->url_data['urlid']) : NULL;
 					}//if(is_null($urlid))
-					$ns_link_alias = get_array_param($this->globals,'domain_registry','','is_string','link_alias');
 					return $this->app_web_link.'/'.(strlen($this->url_virtual_path) ? $this->url_virtual_path.'/' : '').(strlen($lang) ? $lang.'/' : '').(strlen(trim($urlid,'/')) ? trim($urlid,'/').'/' : '');
 				case URL_FORMAT_FRIENDLY_ORIGINAL:
 					return $this->url_base;
@@ -1250,7 +1250,7 @@
 	    public function InitDebugger() {
 			if(self::$debug!==TRUE || !class_exists('\\PAF\\ADebugger')) { return FALSE; }
 			if(is_object($this->debugger)) { return $this->debugger->IsEnabled(); }
-			$this->debugger = new ADebugger(self::$debug,_X_ROOT_PATH.self::GetPafPath().'/debug',_X_ROOT_PATH._X_APP_PATH.self::$logs_path,_X_ROOT_PATH._X_APP_PATH.'/tmp');
+			$this->debugger = new ADebugger(self::$debug,_AAPP_ROOT_PATH.self::GetAAppRelativePath().'/debug',_AAPP_ROOT_PATH._AAPP_APPLICATION_PATH.self::$logs_path,_AAPP_ROOT_PATH._AAPP_APPLICATION_PATH.'/tmp');
 			$this->debugger->phpconsole_password = self::$phpconsole_password;
 			$this->debugger->log_file = self::$log_file;
 			$this->debugger->errors_log_file = self::$errors_log_file;
@@ -1355,7 +1355,7 @@
 		 */
 		public function Write2LogFile($msg,$type = 'log',$file = '',$path = '') {
 			if(is_object($this->debugger)) { return $this->debugger->Write2LogFile($msg,$type,$file,$path); }
-			$lpath = (is_string($path) && strlen($path) ? rtrim($path,'/') : _X_ROOT_PATH._X_APP_PATH.self::$logs_path).'/';
+			$lpath = (is_string($path) && strlen($path) ? rtrim($path,'/') : _AAPP_ROOT_PATH._AAPP_APPLICATION_PATH.self::$logs_path).'/';
 			switch(strtolower($type)) {
 				case 'error':
 					return ADebugger::Log2File($msg,$lpath.(strlen($file) ? $file : self::$errors_log_file));
