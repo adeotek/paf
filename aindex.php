@@ -12,7 +12,7 @@
  * @filesource
  */
 	define('_VALID_AAPP_REQ',TRUE);
-	require_once('config_paths.inc');
+	require_once('pathinit.php');
 	if(defined('_AAPP_OFFLINE') && _AAPP_OFFLINE) { die('OFFLINE!'); }
 	/* Let browser know that response is utf-8 encoded */
 	header('Content-Type: text/html; charset=UTF-8');

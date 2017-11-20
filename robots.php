@@ -13,7 +13,7 @@
  * @filesource
  */
     define('_VALID_AAPP_REQ',TRUE);
-	require_once('config_paths.inc');
+	require_once('pathinit.php');
 	require_once(_AAPP_ROOT_PATH._AAPP_APPLICATION_PATH._AAPP_CONFIG_PATH.'/Configuration.php');
 	PAF\AApp::SessionStart();
 	$_SESSION['robot'] = 1;

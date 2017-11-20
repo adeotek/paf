@@ -12,7 +12,7 @@
  * @filesource
  */
     define('_VALID_AAPP_REQ',TRUE);
-	require_once('config_paths.inc');
+	require_once('pathinit.php');
 	if(defined('_AAPP_OFFLINE') && _AAPP_OFFLINE) {
 		require_once('offline.php');
 		die();
