@@ -27,7 +27,7 @@
 		 */
 		protected $aapp_object = NULL;
 		/**
-		 * @var    string Session sub-array key for storing PAFReq data
+		 * @var    string Session sub-array key for storing ARequest data
 		 * @access protected
 		 */
 		protected $subsession = NULL;
@@ -97,7 +97,7 @@
 		 */
 		protected $paf_arr_kv_separator = '|';
 		/**
-		 * PAFReq constructor function
+		 * ARequest constructor function
 		 *
 		 * @param  AApp $app_obj Reference to the PAF application instance
 		 * @param  string $subsession Sub-session key/path
@@ -117,7 +117,7 @@
 			$this->Init();
 		}//END public function __construct
 		/**
-		 * Initiate PAFReq session data (generate session data id) if is not initialized
+		 * Initiate ARequest session data (generate session data id) if is not initialized
 		 *
 		 * @return void
 		 * @access protected
@@ -133,7 +133,7 @@
 			$this->StartSecureHttp();
 		}//END protected function Init
 		/**
-		 * Clear PAFReq session data and re-initialize it
+		 * Clear ARequest session data and re-initialize it
 		 *
 		 * @return void
 		 * @access protected
@@ -195,14 +195,6 @@
 			$this->custom_class = self::$paf_class_file_name!=$value;
 			self::$paf_class_file_name = $value;
 		}//END public function SetClassFileName
-
-		public function GetUtf8() {
-			return self::$paf_utf8;
-		}//END public function GetUtf8
-
-		public function SetUtf8($value = TRUE) {
-			self::$paf_utf8 = $value;
-		}//END public function SetUtf8
 		/**
 		 * Sets params to be send via post on the ajax request
 		 *
@@ -250,40 +242,40 @@
 			return '<span id="ARequestStatus"'.$lclass.' style="display: none; '.$style.'">'.htmlentities($content).'</span>';
 		}//END public function ShowStatus
 		/**
-		 * Generate and execute javascript for AjaxCall request
+		 * Generate and execute javascript for AjaxRequest request
 		 *
 		 * @param  type $param_name param description
 		 * @return string
 		 * @access public
 		 */
-		public function ExecuteAjaxCall($params = array(),$loader = 1,$confirm = NULL,$js_script = NULL,$async = 1,$run_oninit_event = 1,$post_params = NULL,$class_file = NULL,$class_name = NULL,$interval = NULL,$callback = NULL) {
-			$this->AddAction($this->PrepareAjaxCall($params,$loader,$confirm,$js_script,$async,$run_oninit_event,$post_params,$class_file,$class_name));
-		}//END public function ExecuteAjaxCall
+		public function ExecuteAjaxRequest($params = array(),$loader = 1,$confirm = NULL,$js_script = NULL,$async = 1,$run_oninit_event = 1,$post_params = NULL,$class_file = NULL,$class_name = NULL,$interval = NULL,$callback = NULL) {
+			$this->AddAction($this->PrepareAjaxRequest($params,$loader,$confirm,$js_script,$async,$run_oninit_event,$post_params,$class_file,$class_name));
+		}//END public function ExecuteAjaxRequest
 		/**
-		 * Generate javascript for AjaxCall request
+		 * Generate javascript for AjaxRequest request
 		 *
 		 * @param  type $param_name param description
 		 * @return string
 		 * @access public
 		 */
-		public function PrepareAjaxCallWithCallback($params = array(),$callback = NULL,$loader = 1,$confirm = NULL,$js_script = NULL,$async = 1,$run_oninit_event = 1,$post_params = NULL,$class_file = NULL,$class_name = NULL,$interval = NULL,$with_context = NULL) {
-			return $this->PrepareAjaxCall($params,$loader,$confirm,$js_script,$async,$run_oninit_event,$post_params,$class_file,$class_name,$interval,$callback,$with_context);
-		}//END public function PrepareAjaxCallWithCallback
+		public function PrepareAjaxRequestWithCallback($params = array(),$callback = NULL,$loader = 1,$confirm = NULL,$js_script = NULL,$async = 1,$run_oninit_event = 1,$post_params = NULL,$class_file = NULL,$class_name = NULL,$interval = NULL,$with_context = NULL) {
+			return $this->PrepareAjaxRequest($params,$loader,$confirm,$js_script,$async,$run_oninit_event,$post_params,$class_file,$class_name,$interval,$callback,$with_context);
+		}//END public function PrepareAjaxRequestWithCallback
 		/**
-		 * Generate javascript for AjaxCall request
+		 * Generate javascript for AjaxRequest request
 		 *
 		 * @param  type $param_name param description
 		 * @return string
 		 * @access public
 		 */
-		public function PrepareAjaxCall($params = array(),$loader = 1,$confirm = NULL,$js_script = NULL,$async = 1,$run_oninit_event = 1,$post_params = NULL,$class_file = NULL,$class_name = NULL,$interval = NULL,$callback = NULL,$with_context = NULL) {
+		public function PrepareAjaxRequest($params = array(),$loader = 1,$confirm = NULL,$js_script = NULL,$async = 1,$run_oninit_event = 1,$post_params = NULL,$class_file = NULL,$class_name = NULL,$interval = NULL,$callback = NULL,$with_context = NULL) {
 			if(!is_array($params) || !count($params)) { return NULL; }
 			$commands = $this->GetCommands($params);
 			if(!strlen($commands)) { return NULL; }
 			return $this->Prepare($commands,$loader,$confirm,$js_script,$async,$run_oninit_event,$post_params,$class_file,$class_name,$interval,$callback,$with_context);
-		}//END public function PrepareAjaxCall
+		}//END public function PrepareAjaxRequest
 		/**
-		 * Generate command parameters string for AjaxCall request
+		 * Generate command parameters string for AjaxRequest request
 		 *
 		 * @param  type $param_name param description
 		 * @return string
@@ -307,7 +299,7 @@
 			return $result;
 		}//END public function GetCommandParmeters
 		/**
-		 * Generate commands string for AjaxCall request
+		 * Generate commands string for AjaxRequest request
 		 *
 		 * @param  type $param_name param description
 		 * @return string
@@ -318,10 +310,10 @@
 			$module = get_array_param($params,'module',NULL,'is_notempty_string');
 			$method = get_array_param($params,'method',NULL,'is_notempty_string');
 			if(!$module || !$method) { return NULL; }
-			$call = get_array_param($params,'call','AjaxCall','is_notempty_string');
+			$call = get_array_param($params,'call','AjaxRequest','is_notempty_string');
 			$target = get_array_param($params,'target','','is_string');
 			$lparams = get_array_param($params,'params',array(),'is_array');
-			$commands = "AjaxCall('{$module}','{$method}'";
+			$commands = "AjaxRequest('{$module}','{$method}'";
 			if(array_key_exists('target',$lparams)) {
 				$ptarget = $lparams['target'];
 				unset($lparams['target']);
@@ -394,30 +386,28 @@
 							$class_file = $class_file ? $class_file : $this->GetClassFile();
 							$class_name = $class_name ? $class_name : $this->GetClassName();
 							$req_sess_params = array(
-								AApp::ConvertToSessionCase('UTF8',self::$paf_session_keys_case)=>self::$paf_utf8,
 								AApp::ConvertToSessionCase('METHOD',self::$paf_session_keys_case)=>$function,
 								AApp::ConvertToSessionCase('CLASS_FILE',self::$paf_session_keys_case)=>$class_file,
 								AApp::ConvertToSessionCase('CLASS',self::$paf_session_keys_case)=>$class_name,
 							);
 						} else {
 							$req_sess_params = array(
-								AApp::ConvertToSessionCase('UTF8',self::$paf_session_keys_case)=>self::$paf_utf8,
 								AApp::ConvertToSessionCase('METHOD',self::$paf_session_keys_case)=>$function,
 							);
 						}//if($class_file || $class_name || $this->custom_class)
 						$subsession = is_array($this->subsession) ? $this->subsession : array($this->subsession);
-						$subsession[] = AApp::ConvertToSessionCase('PAF_REQUEST',self::$paf_session_keys_case);
-						$subsession[] = AApp::ConvertToSessionCase('REQUESTS',self::$paf_session_keys_case);
+						$subsession[] = AApp::ConvertToSessionCase('PAF_AREQUEST',self::$paf_session_keys_case);
+						$subsession[] = AApp::ConvertToSessionCase('AREQUESTS',self::$paf_session_keys_case);
 						$this->aapp_object->SetGlobalParam(AApp::ConvertToSessionCase($request_id,self::$paf_session_keys_case),$req_sess_params,FALSE,$subsession,FALSE);
-						$session_id = rawurlencode(GibberishAES::enc(session_id(),self::$session_key));
+						$session_id = rawurlencode(\GibberishAES::enc(session_id(),self::$session_key));
 						$postparams = $this->PreparePostParams($post_params);
 						$args_separators = array($this->paf_params_separator,$this->paf_arr_e_separator,$this->paf_arr_kv_separator);
 						$phash = self::$paf_use_window_name ? "'+ARequest.get(window.name)+'".self::$paf_arg_separator : '';
-						$jsarguments = self::$paf_params_encrypt ? GibberishAES::enc($phash.$this->ParseArguments($args,$args_separators),$request_id) : $phash.$this->ParseArguments($args,$args_separators);
+						$jsarguments = self::$paf_params_encrypt ? \GibberishAES::enc($phash.$this->ParseArguments($args,$args_separators),$request_id) : $phash.$this->ParseArguments($args,$args_separators);
 						$pconfirm = $this->PrepareConfirm($confirm,$request_id);
 						$jcallback = strlen($callback) ? $callback : '';
 						if(strlen($jcallback) && self::$paf_params_encrypt) {
-							$jcallback = GibberishAES::enc($jcallback,$request_id);
+							$jcallback = \GibberishAES::enc($jcallback,$request_id);
 						}//if(strlen($callback) && self::$paf_params_encrypt)
 						if(is_numeric($interval) && $interval>0) {
 							$all_commands .= "ARequest.runRepeated({$interval},'".str_replace("'","\\'",$jsarguments)."',".((int)self::$paf_params_encrypt).",'{$targetId}','{$action}','{$targetProperty}','{$session_id}','{$request_id}','{$postparams}',{$loader},'{$async}','{$js_script}',{$pconfirm},".(strlen($jparams) ? $jparams : 'undefined').",".(strlen($jcallback) ? $jcallback : 'false').",".($run_oninit_event==1 ? 1 : 0).','.(strlen($eparams) ? $eparams : 'undefined').");";
@@ -538,14 +528,14 @@
 						'ok'=>get_array_param($confirm,'ok','','is_string'),
 						'cancel'=>get_array_param($confirm,'cancel','','is_string'),
 					)));
-					if(self::$paf_params_encrypt) { $confirm_str = "'".GibberishAES::enc($confirm_str,$request_id)."'"; }
+					if(self::$paf_params_encrypt) { $confirm_str = "'".\GibberishAES::enc($confirm_str,$request_id)."'"; }
 					// return 'undefined';
 					break;
 				case 'js':
 				default:
 					if(self::$paf_params_encrypt) {
 						$confirm_str = str_replace('"',"'",json_encode(array('type'=>'std','message'=>rawurlencode($ctxt))));
-						$confirm_str = "'".GibberishAES::enc($confirm_str,$request_id)."'";
+						$confirm_str = "'".\GibberishAES::enc($confirm_str,$request_id)."'";
 					} else {
 						$confirm_str = "'".rawurlencode($ctxt)."'";
 					}//if(self::$paf_params_encrypt)
@@ -624,7 +614,7 @@
 			if(count($target_arr2)>1) { $targetProperty = $target_arr2[1]; }
 			if(!$action) { $action = 'r'; }
 			if(!$targetProperty) { $targetProperty = 'innerHTML'; }
-			$action = "ARequest.put(".(self::$paf_utf8 ? 'decodeURIComponent' : 'unescape')."('".rawurlencode($content)."'),'$targetId','$action','$targetProperty')";
+			$action = "ARequest.put(decodeURIComponent('".rawurlencode($content)."'),'$targetId','$action','$targetProperty')";
 			$this->AddAction($action);
 		}//END public function InnerHtml
 		/**
@@ -678,7 +668,7 @@
 			$args = utf8_decode(rawurldecode($args));
 			if(self::$paf_secure_http) {
 				if(!$this->paf_http_key) { return "ARequest ERROR: [$function] Not validated."; }
-				$args = GibberishAES::dec($args,$this->paf_http_key);
+				$args = \GibberishAES::dec($args,$this->paf_http_key);
 			}//if(self::$paf_secure_http)
 			//limited to 100 arguments for DNOS attack protection
 			$args = explode(self::$paf_arg_separator,$args,100);

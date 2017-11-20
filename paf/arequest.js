@@ -19,8 +19,8 @@ var ARequest = {
 	actSeparator : ']!r!s![',
 	pipeChar: '^[!]^',
 	tildeChar: '^[^]^',
-	onPAFReqInitEvent : true,
-	onPAFReqCompleteEvent : true,
+	onARequestInitEvent : true,
+	onARequestCompleteEvent : true,
 	timers : new Array(),
 	updateProcOn : function(add_val,loader) {
 		if(loader) {
@@ -40,9 +40,9 @@ var ARequest = {
 			loader(new_status);
 		} else {
 				if(new_status==1) {
-				$.event.trigger({ type: 'onPAFReqLoaderOn', loader: loader });
+				$.event.trigger({ type: 'onARequestLoaderOn', loader: loader });
 				} else {
-				$.event.trigger({ type: 'onPAFReqLoaderOff', loader: loader });
+				$.event.trigger({ type: 'onARequestLoaderOff', loader: loader });
 				}//if(new_status==1)
 		}//if(typeof(loader)=='function')
 	},//END updateIndicator
@@ -102,9 +102,9 @@ var ARequest = {
 		ARequest.runExec(php,encrypted,id,act,property,session_id,request_id,post_params,loader,async,js_script,jparams,callback,run_oninit_event,eparam,call_type);
 	},//END run
 	runExec : function(php,encrypted,id,act,property,session_id,request_id,post_params,loader,async,js_script,jparams,callback,run_oninit_event,eparam,call_type) {
-		if(run_oninit_event && ARequest.onPAFReqInitEvent) {
-			$.event.trigger({ type: 'onPAFReqInit', callType: call_type, target: id, action: act, property: property });
-		}//if(run_oninit_event && ARequest.onPAFReqInitEvent)
+		if(run_oninit_event && ARequest.onARequestInitEvent) {
+			$.event.trigger({ type: 'onARequestInit', callType: call_type, target: id, action: act, property: property });
+		}//if(run_oninit_event && ARequest.onARequestInitEvent)
 		var end_js_script = '';
 		if(js_script && js_script!='') {
 			var scripts = js_script.split('~');
@@ -190,7 +190,7 @@ var ARequest = {
 				if(actions[1]) { eval(actions[1]); }
 				if(js_script && js_script!='') { ARequest.runScript(js_script); }
 				ARequest.updateProcOn(-1,loader);
-				if(ARequest.onPAFReqCompleteEvent) { $.event.trigger({ type: 'onPAFReqComplete', callType: call_type }); }
+				if(ARequest.onARequestCompleteEvent) { $.event.trigger({ type: 'onARequestComplete', callType: call_type }); }
 				if(callback) {
 					if(callback instanceof Function) {
 						callback();

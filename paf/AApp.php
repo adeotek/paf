@@ -244,7 +244,7 @@
 		 * @param  bool $session_init Flag indicating if session should be started or not
 		 * @param  bool $do_not_keep_alive Flag indicating if session should be kept alive by the current request
 		 * @param  bool $shell Shell mode on/off
-		 * @return PAF Returns the PAF instance
+		 * @return \PAF\AApp Returns the PAF application instance
 		 * @access public
 		 * @static
 		 */
@@ -348,7 +348,7 @@
 						}//if(class_exists('ErrorHandler') && ErrorHandler::HasErrors())
 						if(count($errors)>0) {
 							self::$session_started = FALSE;
-							self::AddToLog(print_r($errors,1),$absolute_path.self::$logs_path.'/'.self::$errors_log_file);
+							self::Log2File(print_r($errors,1),$absolute_path.self::$logs_path.'/'.self::$errors_log_file);
 							$dbg_data .= 'Session start [handler: Redis] errors: '.print_r($errors,1)."\n";
 						} else {
 							self::$session_started = TRUE;
@@ -379,7 +379,7 @@
 						}//if(class_exists('ErrorHandler') && ErrorHandler::HasErrors())
 						if(count($errors)>0) {
 							self::$session_started = FALSE;
-							self::AddToLog(print_r($errors,1),$absolute_path.self::$logs_path.'/'.self::$errors_log_file);
+							self::Log2File(print_r($errors,1),$absolute_path.self::$logs_path.'/'.self::$errors_log_file);
 							$dbg_data .= 'Session start [handler: Memcached] errors: '.print_r($errors,1)."\n";
 						} else {
 							self::$session_started = TRUE;
@@ -406,7 +406,7 @@
 						}//if(class_exists('ErrorHandler') && ErrorHandler::HasErrors())
 						if(count($errors)>0) {
 							self::$session_started = FALSE;
-							self::AddToLog(print_r($errors,1),$absolute_path.self::$logs_path.'/'.self::$errors_log_file);
+							self::Log2File(print_r($errors,1),$absolute_path.self::$logs_path.'/'.self::$errors_log_file);
 							$dbg_data .= 'Session start [handler: Memcache] errors: '.print_r($errors,1)."\n";
 						} else {
 							self::$session_started = TRUE;
@@ -477,7 +477,7 @@
 			$dbg_data .= 'Do not keep alive: '.($do_not_keep_alive!==TRUE && $do_not_keep_alive!==1 ? 'FALSE' : 'TRUE')."\n";
 			if($do_not_keep_alive!==TRUE && $do_not_keep_alive!==1) { $_SESSION['X_SEXT'] = time(); }
 			// vprint($dbg_data);
-			// self::AddToLog($dbg_data,$absolute_path.self::$logs_path.'/'.self::$debugging_log_file);
+			// self::Log2File($dbg_data,$absolute_path.self::$logs_path.'/'.self::$debugging_log_file);
 	    }//END public static function SessionStart
 	    /**
 		 * Close session for write
@@ -553,7 +553,7 @@
 				}//foreach($params as $key=>$value)
 			}//if(is_array($params) && count($params)>0)
 			if($shell) { return; }
-			$this->DebuggerStart();
+			$this->InitDebugger();
 			$this->StartOutputBuffer();
 		}//END protected function __construct
 		/**
@@ -879,35 +879,33 @@
 			$php = NULL;
 			$session_id = NULL;
 			$request_id = NULL;
-			$with_utf8 = TRUE;
 			$class_file = NULL;
 			$class = NULL;
 			$function = NULL;
 			$requests = NULL;
 			if(!$errors) {
 				/* Start session and set ID to the expected paf session */
-				list($php,$session_id,$request_id) = explode(PAFReq::$paf_req_separator,$request);
+				list($php,$session_id,$request_id) = explode(ARequest::$paf_req_separator,$request);
 				/* Validate this request */
 				$spath = array(
 					$this->current_namespace,
-					self::ConvertToSessionCase(self::$paf_session_key,PAFReq::$paf_session_keys_case),
-					self::ConvertToSessionCase('PAF_REQUEST',PAFReq::$paf_session_keys_case),
+					self::ConvertToSessionCase(self::$paf_session_key,ARequest::$paf_session_keys_case),
+					self::ConvertToSessionCase('PAF_AREQUEST',ARequest::$paf_session_keys_case),
 				);
-				$requests = $this->GetGlobalParam(PAF::ConvertToSessionCase('REQUESTS',PAFReq::$paf_session_keys_case),FALSE,$spath,FALSE);
-				if(GibberishAES::dec(rawurldecode($session_id),self::$session_key)!=session_id() || !is_array($requests)) {
+				$requests = $this->GetGlobalParam(self::ConvertToSessionCase('AREQUESTS',ARequest::$paf_session_keys_case),FALSE,$spath,FALSE);
+				if(\GibberishAES::dec(rawurldecode($session_id),self::$session_key)!=session_id() || !is_array($requests)) {
 					$errors .= 'Invalid Request!';
-				} elseif(!in_array(self::ConvertToSessionCase($request_id,PAFReq::$paf_session_keys_case),array_keys($requests))) {
+				} elseif(!in_array(self::ConvertToSessionCase($request_id,ARequest::$paf_session_keys_case),array_keys($requests))) {
 					$errors .= 'Invalid Request Data!';
 				}//if(GibberishAES::dec(rawurldecode($session_id),self::$session_key)!=session_id() || !is_array($requests))
 			}//if(!$errors)
 			if(!$errors) {
 				/* Get function name and process file */
-				$REQ = $requests[self::ConvertToSessionCase($request_id,PAFReq::$paf_session_keys_case)];
-				$with_utf8 = $REQ[self::ConvertToSessionCase('UTF8',PAFReq::$paf_session_keys_case)];
-				$method = $REQ[self::ConvertToSessionCase('METHOD',PAFReq::$paf_session_keys_case)];
-				$lkey = self::ConvertToSessionCase('CLASS_FILE',PAFReq::$paf_session_keys_case);
+				$REQ = $requests[self::ConvertToSessionCase($request_id,ARequest::$paf_session_keys_case)];
+				$method = $REQ[self::ConvertToSessionCase('METHOD',ARequest::$paf_session_keys_case)];
+				$lkey = self::ConvertToSessionCase('CLASS_FILE',ARequest::$paf_session_keys_case);
 				$class_file = (array_key_exists($lkey,$REQ) && $REQ[$lkey]) ? $REQ[$lkey] : (self::$paf_class_file ? self::$paf_class_file : $this->app_path.self::$paf_class_file_path.'/'.self::$paf_class_file_name);
-				$lkey = self::ConvertToSessionCase('CLASS',PAFReq::$paf_session_keys_case);
+				$lkey = self::ConvertToSessionCase('CLASS',ARequest::$paf_session_keys_case);
 				$class = (array_key_exists($lkey,$REQ) && $REQ[$lkey]) ? $REQ[$lkey] : self::$paf_class_name;
 				/* Load the class extension containing the user functions */
 				try {
@@ -919,7 +917,6 @@
 					/* Execute the requested function */
 					$this->arequest = new $class($this,$subsession);
 					$this->arequest->SetPostParams($post_params);
-					$this->arequest->SetUtf8($with_utf8);
 					$errors = $this->arequest->ExecuteRequest($method,$php);
 					$this->SessionCommit(NULL,TRUE);
 					if($this->arequest->HasActions()) { echo $this->arequest->Send(); }
@@ -927,15 +924,15 @@
 				} else {
 					$content = $errors;
 				}//if(!$errors)
-				echo $this->arequest->GetUtf8() ? $content : utf8_encode($content);
+				echo $content;
 				//$this->ClearOutputBuffer(TRUE);
 			} else {
-				AApp::AddToLog(array('type'=>'error','message'=>$errors,'no'=>-1,'file'=>__FILE__,'line'=>__LINE__),$this->app_path.self::$logs_path.'/'.self::$errors_log_file);
+				AApp::Log2File(array('type'=>'error','message'=>$errors,'no'=>-1,'file'=>__FILE__,'line'=>__LINE__),$this->app_path.self::$logs_path.'/'.self::$errors_log_file);
 				$this->RedirectOnError();
 			}//if(!$errors)
 		}//END public function ExecuteARequest
 		/**
-		 * Redirect to home page/login page if an error occurs in PAFReq execution
+		 * Redirect to home page/login page if an error occurs in ARequest execution
 		 *
 		 * @return void
 		 * @access protected
@@ -1250,14 +1247,14 @@
 		 * @return void
 		 * @access public
 		 */
-	    public function DebuggerStart() {
-			if(self::$debug!==TRUE || !class_exists('ADebugger')) { return FALSE; }
+	    public function InitDebugger() {
+			if(self::$debug!==TRUE || !class_exists('\\PAF\\ADebugger')) { return FALSE; }
 			if(is_object($this->debugger)) { return $this->debugger->IsEnabled(); }
 			$this->debugger = new ADebugger(self::$debug,_X_ROOT_PATH.self::GetPafPath().'/debug',_X_ROOT_PATH._X_APP_PATH.self::$logs_path,_X_ROOT_PATH._X_APP_PATH.'/tmp');
 			$this->debugger->phpconsole_password = self::$phpconsole_password;
 			$this->debugger->log_file = self::$log_file;
 			$this->debugger->errors_log_file = self::$errors_log_file;
-			$this->debugger->debugging_log_file = self::$debugging_log_file;
+			$this->debugger->debug_log_file = self::$debug_log_file;
 			return $this->debugger->IsEnabled();
 		}//END public function DebuggerStart
 		/**
@@ -1356,17 +1353,17 @@
 		 * @return void
 		 * @access public
 		 */
-		public function WriteToLog($msg,$type = 'log',$file = '',$path = '') {
-			if(is_object($this->debugger)) { return $this->debugger->WriteToLog($msg,$type,$file,$path); }
+		public function Write2LogFile($msg,$type = 'log',$file = '',$path = '') {
+			if(is_object($this->debugger)) { return $this->debugger->Write2LogFile($msg,$type,$file,$path); }
 			$lpath = (is_string($path) && strlen($path) ? rtrim($path,'/') : _X_ROOT_PATH._X_APP_PATH.self::$logs_path).'/';
 			switch(strtolower($type)) {
 				case 'error':
-					return ADebugger::AddToLog($msg,$lpath.(strlen($file) ? $file : self::$errors_log_file));
+					return ADebugger::Log2File($msg,$lpath.(strlen($file) ? $file : self::$errors_log_file));
 				case 'debug':
-					return ADebugger::AddToLog($msg,$lpath.(strlen($file) ? $file : self::$debugging_log_file));
+					return ADebugger::Log2File($msg,$lpath.(strlen($file) ? $file : self::$debugging_log_file));
 				case 'log':
 				default:
-					return ADebugger::AddToLog($msg,$lpath.(strlen($file) ? $file : self::$log_file));
+					return ADebugger::Log2File($msg,$lpath.(strlen($file) ? $file : self::$log_file));
 			}//switch(strtolower($type))
 		}//END public function WriteToLog
 		/**
@@ -1379,8 +1376,8 @@
 		 * @access public
 		 * @static
 		 */
-		public static function AddToLog($msg,$file = '',$script_name = '') {
-			return ADebugger::AddToLog($msg,$file,$script_name);
+		public static function Log2File($msg,$file = '',$script_name = '') {
+			return ADebugger::Log2File($msg,$file,$script_name);
 		}//END public static function AddToLog
 		/**
 		 * Starts a debug timer
@@ -1390,8 +1387,8 @@
 		 * @access public
 		 * @static
 		 */
-		public static function TimerStart($name) {
-			return ADebugger::TimerStart($name);
+		public static function StartTimeTrack($name) {
+			return ADebugger::StartTimeTrack($name);
 		}//END public static function TimerStart
 		/**
 		 * Displays a debug timer elapsed time
@@ -1402,8 +1399,8 @@
 		 * @access public
 		 * @static
 		 */
-		public static function TimerShow($name,$stop = TRUE) {
-			return ADebugger::TimerShow($name,$stop);
+		public static function ShowTimeTrack($name,$stop = TRUE) {
+			return ADebugger::ShowTimeTrack($name,$stop);
 		}//END public static function TimerStart
 	}//END class AApp extends AAppConfig
 ?>

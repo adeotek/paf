@@ -65,7 +65,7 @@
 		 * @var        boolean php console Chrome extension password
 		 * @access     public
 		 */
-		public $phpconsole_password = 'pafD!';
+		public $phpconsole_password = '1234';
 		/**
 		 * @var        string Relative path to the logs folder
 		 * @access     public
@@ -282,7 +282,7 @@
 		 * @access public
 		 * @static
 		 */
-		public static function AddToLog($msg,$file = '',$script_name = '') {
+		public static function Log2File($msg,$file = '',$script_name = '') {
 			$lf = strlen($file) ? $file : 'unknown.log';
 			try {
 				$lfile = fopen($lf,'a');
@@ -313,16 +313,16 @@
 		 * @return void
 		 * @access public
 		 */
-		public function WriteToLog($msg,$type = 'log',$file = '',$path = '') {
+		public function Write2LogFile($msg,$type = 'log',$file = '',$path = '') {
 			$lpath = (is_string($path) && strlen($path) ? rtrim($path,'/') : $this->logs_path).'/';
 			switch(strtolower($type)) {
 				case 'error':
-					return self::AddToLog($msg,$lpath.(strlen($file) ? $file : $this->errors_log_file));
+					return self::Log2File($msg,$lpath.(strlen($file) ? $file : $this->errors_log_file));
 				case 'debug':
-					return self::AddToLog($msg,$lpath.(strlen($file) ? $file : $this->debugging_log_file));
+					return self::Log2File($msg,$lpath.(strlen($file) ? $file : $this->debugging_log_file));
 				case 'log':
 				default:
-					return self::AddToLog($msg,$lpath.(strlen($file) ? $file : $this->log_file));
+					return self::Log2File($msg,$lpath.(strlen($file) ? $file : $this->log_file));
 			}//switch(strtolower($type))
 		}//END public function WriteToLog
 		/**
@@ -333,7 +333,7 @@
 		 * @access public
 		 * @static
 		 */
-		public static function TimerStart($name) {
+		public static function StartTimeTrack($name) {
 			if(!$name) { return FALSE; }
 			self::$debug_timers[$name] = microtime(TRUE);
 			return TRUE;
@@ -347,7 +347,7 @@
 		 * @access public
 		 * @static
 		 */
-		public static function TimerShow($name,$stop = TRUE) {
+		public static function ShowTimeTrack($name,$stop = TRUE) {
 			if(!$name || !array_key_exists($name,self::$debug_timers)) { return NULL; }
 			$time = self::$debug_timers[$name];
 			if($stop) { unset(self::$debug_timers[$name]); }
