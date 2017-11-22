@@ -8,7 +8,7 @@
  * @author     George Benjamin-Schonberger
  * @copyright  Copyright (c) 2012 - 2018 AdeoTEK
  * @license    LICENSE.md
- * @version    1.5.0
+ * @version    2.0.0
  * @filesource
  */
 	/**
@@ -19,7 +19,7 @@
 	 * @package  AdeoTEK\PAF
 	 * @access   public
 	 */
-	class PAFRequest extends PAF\ARequest {
+	class MyARequest extends PAF\ARequest {
 		/**
 		 * Generic ajax call
 		 *
@@ -38,5 +38,5 @@
 				echo $e->getFullMessage();
 			}//END try
 		}//END public function AjaxCall
-	}//END class PAFRequest extends PAF\ARequest
+	}//END class MyARequest extends PAF\ARequest
 ?>

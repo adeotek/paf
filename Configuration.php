@@ -2,7 +2,7 @@
 /**
  * PAF (PHP AJAX Framework) Configuration file
  *
- * Here are all the configuration params for PAF
+ * Here are all the configuration parameters for PAF
  * Edit only values for the AAppConfig class properties
  * and the User global required files section
  *
@@ -10,7 +10,7 @@
  * @author     George Benjamin-Schonberger
  * @copyright  Copyright (c) 2012 - 2018 AdeoTEK
  * @license    LICENSE.md
- * @version    1.5.0
+ * @version    2.0.0
  * @filesource
  */
 	namespace PAF;
@@ -196,79 +196,79 @@
 		 * @access     public
 		 * @static
 		 */
-		public static $paf_location = 'public';
+		public static $aapp_location = 'public';
 		/**
 		 * @var        string Relative path to PAF class (linux style)
 		 * @access     public
 		 * @static
 		 */
-		public static $paf_path = '/paf';
+		public static $aapp_path = '/paf';
 		/**
 		 * @var        string Relative path to PAF javascript file (linux style)
 		 * @access     public
 		 * @static
 		 */
-		public static $paf_js_path = '/paf';
+		public static $aapp_js_path = '/paf';
 		/**
 		 * @var        string Target file for PAF post (relative path from public folder + name)
 		 * @access     public
 		 * @static
 		 */
-		public static $paf_target = 'aindex.php';
+		public static $aapp_target = 'aindex.php';
 		/**
 		 * @var        string PAF session key
 		 * @access     protected
 		 * @static
 		 */
-		protected static $paf_session_key = 'PAF_DATA';
+		protected static $aapp_session_key = 'AAPP_DATA';
 		/**
 		 * @var        string PAF implementig class name
 		 * @access     protected
 		 * @static
 		 */
-		protected static $paf_class_name = 'PAFRequest';
+		protected static $aapp_class_name = 'MyARequest';
 		/**
 		 * @var        string PAF implementing class file (relative path + name)
 		 * @access     protected
 		 * @static
 		 */
-		protected static $paf_class_file = '';
+		protected static $aapp_class_file = '';
 		/**
 		 * @var        string PAF implementing class file path (relative)
 		 * @access     protected
 		 * @static
 		 */
-		protected static $paf_class_file_path = '';
+		protected static $aapp_class_file_path = '';
 		/**
 		 * @var        string PAF implementing class file name
 		 * @access     protected
 		 * @static
 		 */
-		protected static $paf_class_file_name = 'ADispatcher.php';
+		protected static $aapp_class_file_name = 'MyARequest.php';
 		/**
 		 * @var        string Javascript on request completed callback
 		 * @access     public
 		 * @static
 		 */
-		public static $paf_areq_js_callbak = NULL;
+		public static $aapp_areq_js_callbak = NULL;
 		/**
 		 * @var        boolean Secure http support on/off
 		 * @access     protected
 		 * @static
 		 */
-		protected static $paf_secure_http = TRUE;
+		protected static $aapp_secure_http = TRUE;
 		/**
 		 * @var        boolean Parameters sent as value encryption on/off
 		 * @access     protected
 		 * @static
 		 */
-		protected static $paf_params_encrypt = FALSE;
+		protected static $aapp_params_encrypt = FALSE;
 		/**
 		 * @var        boolean Window name auto usage on/off
 		 * @access     protected
 		 * @static
 		 */
-		protected static $paf_use_window_name = TRUE;
+		protected static $aapp_use_window_name = TRUE;
 //END PAF configuration
 //START Logs & errors reporting
 		/**
@@ -306,13 +306,13 @@
 		 * @access     public
 		 * @static
 		 */
-		public static $logs_path = '/applogs';
+		public static $logs_path = '/.logs';
 		/**
 		 * @var        string Name of the main log file
 		 * @access     public
 		 * @static
 		 */
-		public static $log_file = 'paf.log';
+		public static $log_file = 'aapp.log';
 		/**
 		 * @var        string Name of the errors log file
 		 * @access     public
@@ -335,7 +335,7 @@
 		 * @static
 		 */
 		public static function GetAAppRelativePath() {
-			return ((self::$paf_location=='public' ? _AAP_PUBLIC_ROOT_PATH._AAP_PUBLIC_PATH : _AAPP_APPLICATION_PATH).self::$paf_path);
+			return ((self::$aapp_location=='public' ? _AAP_PUBLIC_ROOT_PATH._AAP_PUBLIC_PATH : _AAPP_APPLICATION_PATH).self::$aapp_path);
 		}//END public static function GetAAppRelativePath
 		/**
 		 * GetNewUID method generates a new unique ID
@@ -360,38 +360,8 @@
 		 * @static
 		 */
 		public static function _Autoload($class) {
-			global $_CLASSES_REGISTRY;
-			if(strpos($class,'\\')!==FALSE) {
-				$class_arr = explode('\\',$class);
-				if(!array_key_exists($class_arr[0],$_CLASSES_REGISTRY)) { return FALSE; }
-				$fpath = trim(get_array_param($_CLASSES_REGISTRY,$class_arr[0],'','is_string','path'),'/');
-				$fname = $class_arr[count($class_arr)-1];
-				$npath = '';
-				for($i=1;$i<count($class_arr)-2;$i++) { $npath .= (strlen($npath) ? '/' : '').$class_arr[$i]; }
-				require_once(_AAPP_ROOT_PATH._AAPP_APPLICATION_PATH.'/'.(strlen($fpath) ? $fpath.'/' : '').(strlen($npath) ? $npath.'/' : '').$fname.'.php');
-				return TRUE;
-			}//if(strpos($class,'\\')!==FALSE)
-			if(substr($class,-3)=='Pdf') {
-				$bclass = substr($class,0,-3);
-				require_once(_AAPP_ROOT_PATH._AAPP_APPLICATION_PATH._AAPP_CONFIG_PATH.'/registries/ModulesRegistry.inc');
-				if(isset($_MODULES_REGISTRY) && is_array($_MODULES_REGISTRY) && array_key_exists($bclass,$_MODULES_REGISTRY)) {
-					$ns = get_array_param($_MODULES_REGISTRY,$bclass,'','is_string','namespace');
-					$subfolder = get_array_param($_MODULES_REGISTRY,$bclass,'','is_string','subfolder');
-					$tfolder = get_array_param($_CLASSES_REGISTRY,'*Pdf','','is_string','path');
-					$fpath = '/modules/';
-					if(strlen($ns)) { $fpath .= $ns.'/'; }
-					if(strlen($subfolder)) { $fpath .= $subfolder.'/'; }
-					$fpath .= $bclass.'/';
-					if(strlen($tfolder)) { $fpath .= $tfolder.'/'; }
-					require_once(_AAPP_ROOT_PATH._AAPP_APPLICATION_PATH.'/'.$fpath.$class.'.php');
-					return TRUE;
-				}//if(isset($_MODULES_REGISTRY) && is_array($_MODULES_REGISTRY) && array_key_exists($bclass,$_MODULES_REGISTRY))
-			}//if(substr($class,-3)=='Pdf')
-			if(!array_key_exists($class,$_CLASSES_REGISTRY)) { return FALSE; }
-			$fpath = trim(get_array_param($_CLASSES_REGISTRY,$class,'','is_string','path'),'/');
-			$fname = trim(get_array_param($_CLASSES_REGISTRY,$class,$class,'is_notempty_string','name'),'/');
-			require_once(_AAPP_ROOT_PATH._AAPP_APPLICATION_PATH.'/'.(strlen($fpath) ? $fpath.'/' : '').$fname.'.php');
-			return TRUE;
+			// Not implemented!!!
+			return FALSE;
 		}//END public static function _Autoload
 	}//END abstract class AAppConfig
 ?>

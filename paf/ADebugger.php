@@ -8,7 +8,7 @@
  * @author     George Benjamin-Schonberger
  * @copyright  Copyright (c) 2012 - 2018 AdeoTEK
  * @license    LICENSE.md
- * @version    1.5.0
+ * @version    2.0.0
  * @filesource
  */
     namespace PAF;

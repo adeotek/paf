@@ -8,7 +8,7 @@
  * @author     George Benjamin-Schonberger
  * @copyright  Copyright (c) 2012 - 2018 AdeoTEK
  * @license    LICENSE.md
- * @version    1.5.0
+ * @version    2.0.0
  * @filesource
  */
 	namespace PAF;
@@ -54,7 +54,7 @@
 		 * @access protected
 		 * @static
 		 */
-		protected static $output_buffer_started = FALSE;
+		protected static $aapp_ob_started = FALSE;
 		/**
 		 * @var    array Session data
 		 * @access public
@@ -202,7 +202,7 @@
 					}//if(!$method->isStatic() && $method->isPublic())
 				}//if($reflector->hasMethod($member))
 			}//if(strpos($name,'_')!==0)
-			throw new InvalidArgumentException("Undefined or inaccessible property/method [{$member}]!");
+			throw new \InvalidArgumentException("Undefined or inaccessible property/method [{$member}]!");
 		}//END public static function __callStatic
 		/**
 		 * Extracts the URL path of the application.
@@ -517,7 +517,7 @@
 			$this->keep_alive = $do_not_keep_alive ? FALSE : TRUE;
 			if($shell) {
 				self::$data = array();
-				$this->_paf_state = TRUE;
+				$this->_app_state = TRUE;
 				$this->app_domain = trim(get_array_param($_GET,'domain','','is_string'),' /\\');
 				if(strlen($this->app_domain)) {
 					$this->app_web_protocol = trim(get_array_param($_GET,'protocol','http','is_notempty_string'),' /:\\').'://';
@@ -525,7 +525,7 @@
 					$this->app_web_link = $this->app_web_protocol.$this->app_domain.(strlen($this->url_folder) ? '/' : '').$this->url_folder;
 				}//if(strlen($this->app_domain))
 			} else {
-				$this->_paf_state = $with_session ? isset(self::$data) : TRUE;
+				$this->_app_state = $with_session ? isset(self::$data) : TRUE;
 				$this->app_web_protocol = (isset($_SERVER["HTTPS"]) ? 'https' : 'http').'://';
 				$this->app_domain = strtolower((array_key_exists('HTTP_HOST',$_SERVER) && $_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'localhost');
 				$this->url_folder = self::ExtractUrlPath((is_array($params) && array_key_exists('startup_path',$params) ? $params['startup_path'] : NULL));
@@ -648,7 +648,7 @@
 		 * @access public
 		 */
 		public function GetSessionState() {
-			return $this->_paf_state;
+			return $this->_app_state;
 		}//END public function GetSessionState
 		/**
 		 * Set clear session flag (on commit session will be cleared)
@@ -807,20 +807,20 @@
 		}//END public function UnsetGlobalParam
 
 		public function OutputBufferStarted() {
-			return self::$output_buffer_started;
+			return self::$aapp_ob_started;
 		}//END public function OutputBufferStarted
 
 		public function StartOutputBuffer() {
 			if(!$this->ajax && !self::$bufferd_output && !$this->debugger) { return FALSE; }
 			ob_start();
-			return (self::$output_buffer_started = TRUE);
+			return (self::$aapp_ob_started = TRUE);
 		}//END public function StartOutputBuffer
 
 		public function FlushOutputBuffer($end = FALSE) {
-			if(!self::$output_buffer_started) { return FALSE; }
+			if(!self::$aapp_ob_started) { return FALSE; }
 			if($end===TRUE) {
 				ob_end_flush();
-				self::$output_buffer_started = FALSE;
+				self::$aapp_ob_started = FALSE;
 			} else {
 				ob_flush();
 			}//if($end===TRUE)
@@ -828,7 +828,7 @@
 		}//END public function FlushOutputBuffer
 
 		public function GetOutputBufferContent($clear = TRUE) {
-			if(!self::$output_buffer_started) { return FALSE; }
+			if(!self::$aapp_ob_started) { return FALSE; }
 			if($clear===TRUE) {
 				$content = ob_get_clean();
 			} else {
@@ -838,10 +838,10 @@
 		}//END public function GetOutputBufferContent
 
 		public function ClearOutputBuffer($end = FALSE) {
-			if(!self::$output_buffer_started) { return FALSE; }
+			if(!self::$aapp_ob_started) { return FALSE; }
 			if($end===TRUE) {
 				ob_end_clean();
-				self::$output_buffer_started = FALSE;
+				self::$aapp_ob_started = FALSE;
 			} else {
 				ob_clean();
 			}//if($end===TRUE)
@@ -886,28 +886,28 @@
 			$requests = NULL;
 			if(!$errors) {
 				/* Start session and set ID to the expected paf session */
-				list($php,$session_id,$request_id) = explode(ARequest::$paf_req_separator,$request);
+				list($php,$session_id,$request_id) = explode(ARequest::$aapp_req_sep,$request);
 				/* Validate this request */
 				$spath = array(
 					$this->current_namespace,
-					self::ConvertToSessionCase(self::$paf_session_key,ARequest::$paf_session_keys_case),
-					self::ConvertToSessionCase('PAF_AREQUEST',ARequest::$paf_session_keys_case),
+					self::ConvertToSessionCase(self::$aapp_session_key,ARequest::$aapp_session_keys_case),
+					self::ConvertToSessionCase('PAF_AREQUEST',ARequest::$aapp_session_keys_case),
 				);
-				$requests = $this->GetGlobalParam(self::ConvertToSessionCase('AREQUESTS',ARequest::$paf_session_keys_case),FALSE,$spath,FALSE);
+				$requests = $this->GetGlobalParam(self::ConvertToSessionCase('AREQUESTS',ARequest::$aapp_session_keys_case),FALSE,$spath,FALSE);
 				if(\GibberishAES::dec(rawurldecode($session_id),self::$session_key)!=session_id() || !is_array($requests)) {
 					$errors .= 'Invalid Request!';
-				} elseif(!in_array(self::ConvertToSessionCase($request_id,ARequest::$paf_session_keys_case),array_keys($requests))) {
+				} elseif(!in_array(self::ConvertToSessionCase($request_id,ARequest::$aapp_session_keys_case),array_keys($requests))) {
 					$errors .= 'Invalid Request Data!';
 				}//if(GibberishAES::dec(rawurldecode($session_id),self::$session_key)!=session_id() || !is_array($requests))
 			}//if(!$errors)
 			if(!$errors) {
 				/* Get function name and process file */
-				$REQ = $requests[self::ConvertToSessionCase($request_id,ARequest::$paf_session_keys_case)];
-				$method = $REQ[self::ConvertToSessionCase('METHOD',ARequest::$paf_session_keys_case)];
-				$lkey = self::ConvertToSessionCase('CLASS_FILE',ARequest::$paf_session_keys_case);
-				$class_file = (array_key_exists($lkey,$REQ) && $REQ[$lkey]) ? $REQ[$lkey] : (self::$paf_class_file ? self::$paf_class_file : $this->app_path.self::$paf_class_file_path.'/'.self::$paf_class_file_name);
-				$lkey = self::ConvertToSessionCase('CLASS',ARequest::$paf_session_keys_case);
-				$class = (array_key_exists($lkey,$REQ) && $REQ[$lkey]) ? $REQ[$lkey] : self::$paf_class_name;
+				$REQ = $requests[self::ConvertToSessionCase($request_id,ARequest::$aapp_session_keys_case)];
+				$method = $REQ[self::ConvertToSessionCase('METHOD',ARequest::$aapp_session_keys_case)];
+				$lkey = self::ConvertToSessionCase('CLASS_FILE',ARequest::$aapp_session_keys_case);
+				$class_file = (array_key_exists($lkey,$REQ) && $REQ[$lkey]) ? $REQ[$lkey] : (self::$aapp_class_file ? self::$aapp_class_file : $this->app_path.self::$aapp_class_file_path.'/'.self::$aapp_class_file_name);
+				$lkey = self::ConvertToSessionCase('CLASS',ARequest::$aapp_session_keys_case);
+				$class = (array_key_exists($lkey,$REQ) && $REQ[$lkey]) ? $REQ[$lkey] : self::$aapp_class_name;
 				/* Load the class extension containing the user functions */
 				try {
 					require_once($class_file);
@@ -940,7 +940,7 @@
 		 */
 		protected function RedirectOnError() {
 			if($this->ajax) {
-				echo ARequest::$paf_act_separator.'window.location.href = "'.$this->app_web_link.'";';
+				echo ARequest::$aapp_act_sep.'window.location.href = "'.$this->app_web_link.'";';
 			} else {
 				header('Location:'.$this->app_web_link);
 			}//if($this->ajax)

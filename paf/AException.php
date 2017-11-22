@@ -8,7 +8,7 @@
  * @author     George Benjamin-Schonberger
  * @copyright  Copyright (c) 2012 - 2018 AdeoTEK
  * @license    LICENSE.md
- * @version    1.5.0
+ * @version    2.0.0
  * @filesource
  */
 	/**
@@ -73,7 +73,7 @@
 			$this->original_message = $message;
 			switch($this->type) {
 				case 'firebird':
-					$this->extcode = is_numeric($this->extcode) ?  $this->extcode*(-1) : $this->extcode;
+					$this->ext_code = is_numeric($this->ext_code) ?  $this->ext_code*(-1) : $this->ext_code;
 					break;
 			  	case 'mysql':
 			  	case 'mongodb':
@@ -83,10 +83,10 @@
 				case 'pdo':
 					switch($this->extcode) {
 						case 'HY000':
-							if(is_array($this->errorInfo) && count($this->errorInfo)>2) {
-								$this->extcode = is_numeric($this->errorInfo[1]) ?  $this->errorInfo[1]*(-1) : $this->errorInfo[1];
-								$this->message = 'SQL ERROR: '.$this->errorInfo[2];
-							}//if(is_array($this->errorInfo) && count($this->errorInfo)>2)
+							if(is_array($this->error_info) && count($this->error_info)>2) {
+								$this->ext_code = is_numeric($this->error_info[1]) ?  $this->error_info[1]*(-1) : $this->errorInfo[1];
+								$this->message = 'SQL ERROR: '.$this->error_info[2];
+							}//if(is_array($this->error_info) && count($this->error_info)>2)
 							break;
 						default:
 							break;

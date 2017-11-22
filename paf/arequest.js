@@ -2,11 +2,11 @@
  * PAF (PHP AJAX Framework) ajax requests javascript file.
  *
  * The PAF javascript object used on ajax requests.
- * Copyright (c) 2010 - 2018 AdeoTEK
+ * Copyright (c) 2012 - 2018 AdeoTEK
  * License    LICENSE.md
  *
  * @author     George Benjamin-Schonberger
- * @version    1.5.0
+ * @version    2.0.0
  */
 
 if(AAPP_PHASH && window.name!=AAPP_PHASH) { window.name = AAPP_PHASH; }
@@ -71,14 +71,7 @@ var ARequest = {
 		    return xhr;
 		}//if (window.XMLHttpRequest)
 	},//END getRequest
-	run : function(php,encrypted,id,act,property,session_id,request_id,post_params,loader,async,js_script,conf,jparams,callback,run_oninit_event,eparam,parentEvent,call_type) {
-		if(parentEvent && typeof(parentEvent)=='object') {
-			if(parentEvent.srcElement && typeof(parentEvent.srcElement)=='object') {
-				if(parentEvent.srcElement.nodeName && parentEvent.srcElement.nodeName.toLowerCase()=='a') {
-					parentEvent.preventDefault();
-				}//if(parentEvent.srcElement.nodeName && parentEvent.srcElement.nodeName.toLowerCase()=='a')
-			}//if(parentEvent.srcElement && typeof(parentEvent.srcElement)=='object')
-		}//if(parentEvent && typeof(parentEvent)=='object')
+	run : function(php,encrypted,id,act,property,session_id,request_id,post_params,loader,async,js_script,conf,jparams,callback,run_oninit_event,eparam,call_type) {
 		if(conf) {
 			var cobj = false;
 			if(encrypted==1) {
@@ -124,7 +117,7 @@ var ARequest = {
 			php = eval(jparams_str+'\''+php+'\'');
 		}//if(encrypted==1)
 		if(session_id==decodeURIComponent(session_id)) { session_id = encodeURIComponent(session_id); }
-		var requestString = 'req=' + encodeURIComponent((AAPP_HTTPK ? GibberishAES.enc(php,AAPP_HTTPK) : php))
+		var requestString = 'req=' + encodeURIComponent((AAPP_UID ? GibberishAES.enc(php,AAPP_UID) : php))
 			+ ARequest.reqSeparator + session_id + ARequest.reqSeparator + (request_id || '');
 		requestString += '&phash='+window.name+post_params;
 		if(encrypted==1 && typeof(callback)=='string') { callback = GibberishAES.dec(callback,request_id); }
@@ -136,7 +129,7 @@ var ARequest = {
 		var sphp = GibberishAES.dec(objData.php,'xSTR');
 		sphp = eval("'"+sphp.replaceAll("\\'","'")+"'");
 		var call_type = objData.call_type ? objData.call_type : 'runFromString';
-		ARequest.run(sphp,objData.encrypted,objData.id,objData.act,objData.property,objData.session_id,objData.request_id,objData.post_params,objData.loader,objData.async,objData.js_script,objData.conf,objData.jparams,objData.callback,objData.run_oninit_event,objData.eparam,null,call_type);
+		ARequest.run(sphp,objData.encrypted,objData.id,objData.act,objData.property,objData.session_id,objData.request_id,objData.post_params,objData.loader,objData.async,objData.js_script,objData.conf,objData.jparams,objData.callback,objData.run_oninit_event,objData.eparam,call_type);
 	},//END runFromString
 	timerRun : function(interval,timer,data) {
 		if(data && timer) {
