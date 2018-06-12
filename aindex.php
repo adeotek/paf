@@ -8,7 +8,7 @@
  * @author     George Benjamin-Schonberger
  * @copyright  Copyright (c) 2012 - 2018 AdeoTEK
  * @license    LICENSE.md
- * @version    2.0.0
+ * @version    2.1.0
  * @filesource
  */
 	define('_VALID_AAPP_REQ',TRUE);

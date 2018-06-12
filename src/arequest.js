@@ -6,7 +6,7 @@
  * License    LICENSE.md
  *
  * @author     George Benjamin-Schonberger
- * @version    2.0.0
+ * @version    2.1.0
  */
 
 if(AAPP_PHASH && window.name!=AAPP_PHASH) { window.name = AAPP_PHASH; }
@@ -19,6 +19,8 @@ var ARequest = {
 	actSeparator : ']!r!s![',
 	pipeChar: '^[!]^',
 	tildeChar: '^[^]^',
+	serializeMode: 'php',
+	escapeStringMode: 'custom',
 	onARequestInitEvent : true,
 	onARequestCompleteEvent : true,
 	timers : new Array(),
@@ -218,13 +220,25 @@ var ARequest = {
 	},//END put
 	getFromObject : function(obj,property,attribute) {
 		var val = '';
-		if(typeof(obj)!='object' || !property) { return val; }
+		if(typeof(obj)!='object' || obj==null || !property) { return val; }
 		switch(property) {
 			case 'option':
 				if(typeof(attribute)=='string' && attribute.length>0) {
 					val = obj.options[obj.selectedIndex].getAttribute(attribute);
 				} else {
 					val = obj.options[obj.selectedIndex].text;
+				}//if(typeof(attribute)=='string' && attribute.length>0)
+				break;
+			case 'radio':
+				val = null;
+				if(typeof(attribute)=='string' && attribute.length>0) {
+					var radios = obj.querySelectorAll('[name='+attribute+']');
+					for(var i=0;i<radios.length;i++) {
+						if(radios[i].checked) {
+							val = radios[i].value;
+							break;
+						}//if(radios[i].checked)
+					}//END for
 				}//if(typeof(attribute)=='string' && attribute.length>0)
 				break;
 			case 'visible':
@@ -305,6 +319,7 @@ var ARequest = {
 		return val;
 	},//END getFromObject
 	getToArray : function(obj,initial) {
+		if(typeof(obj)!='object' || obj==null) { return initial; }
 		var aresult;
 		var nName = obj.nodeName.toLowerCase();
 		var objName = obj.getAttribute('name');
@@ -374,7 +389,7 @@ var ARequest = {
 		var result = '';
 		var frm = document.getElementById(id);
 		var rbelements = {};
-		if(frm) {
+		if(typeof(frm)=='object') {
 			$(frm).find('.postable').each(function() {
 				if(this.nodeName.toLowerCase()=='input' && this.getAttribute('type')=='radio') {
 					if(!rbelements.hasOwnProperty(this.getAttribute('name'))) {
@@ -385,16 +400,46 @@ var ARequest = {
 					result = ARequest.getToArray(this,result);
 				}//if(this.nodeName.toLowerCase()=='input' && this.getAttribute('type')=='radio')
 			});
+		} else {
+			console.log('Invalid form: '+id);
 		}//if(frm)
 		return result;
 	},//END getFormContent
 	get : function(id,property,attribute) {
-		if(!property) { return ARequest.phpSerialize(ARequest.escapeString(id)); }
-		if(property=='form') { return ARequest.phpSerialize(ARequest.getFormContent(id)); }
-		var val = ARequest.getFromObject(document.getElementById(id),property,attribute);
-		if(typeof(val)!='string') { return ARequest.phpSerialize(val); }
-		return ARequest.phpSerialize(ARequest.escapeString(val));
+		var result = null;
+		if(!property) {
+			result = ARequest.escapeString(id);
+		} else if(property=='form') {
+			result = ARequest.getFormContent(id);
+		} else {
+			var eObj = document.getElementById(id);
+			var val = null;
+			if(typeof(eObj)!='object') {
+				console.log('Invalid element: '+id);
+			} else if(eObj==null) {
+				console.log('Null element: '+id);
+			} else {
+				val = ARequest.getFromObject(document.getElementById(id),property,attribute);
+			}//if(typeof(obj)!='object')
+			if(typeof(val)!='string') {
+				result = val;
+			} else {
+				result = ARequest.escapeString(val);
+			}//if(typeof(val)!='string')
+		}//if(!property)
+		return ARequest.serialize(result);
 	},//END get
+	escapeString : function(val) {
+		if(ARequest.escapeStringMode!='custom') { return val; }
+		var nval = String(val);
+		nval = nval.replace(new RegExp('\\|','g'),ARequest.pipeChar);
+		nval = nval.replace(new RegExp('~','g'),ARequest.tildeChar);
+		return nval;
+	},//END escapeString
+	serialize: function(val) {
+		if(ARequest.serializeMode=='php') { return ARequest.phpSerialize(val); }
+		return JSON.stringify(val);
+	},//END serialize
 	phpSerialize : function(mixed_value) {
 		var val,key,okey,
 	    ktype = '',
@@ -460,7 +505,7 @@ var ARequest = {
           				ktype = _getType(mixed_value[key]);
           				if(ktype === 'function') { continue; }
           				okey = (key.match(/^[0-9]+$/) ? parseInt(key, 10) : key);
-          				vals += ARequest.phpSerialize(okey) + ARequest.phpSerialize(mixed_value[key]);
+          				vals += ARequest.serialize(okey) + ARequest.serialize(mixed_value[key]);
           				count++;
         			}//if(mixed_value.hasOwnProperty(key))
       			}//END for
@@ -486,12 +531,6 @@ var ARequest = {
 		}//for(var i=0; i<f.length; i++)
 		return vals;
 	},//END getForm
-	escapeString : function(val) {
-		var nval = String(val);
-		nval = nval.replace(new RegExp('\\|','g'),ARequest.pipeChar);
-		nval = nval.replace(new RegExp('~','g'),ARequest.tildeChar);
-		return nval;
-	},//END escapeString
 	jquiConfirmDialog : function(options,callback) {
 		var cfg = {
 			type: 'jqui',

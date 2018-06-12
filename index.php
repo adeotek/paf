@@ -8,7 +8,7 @@
  * @author     George Benjamin-Schonberger
  * @copyright  Copyright (c) 2012 - 2018 AdeoTEK
  * @license    LICENSE.md
- * @version    2.0.0
+ * @version    2.1.0
  * @filesource
  */
     define('_VALID_AAPP_REQ',TRUE);
@@ -26,9 +26,9 @@
 	header('Content-Language: en');
 	if(in_array('globals',array_keys(array_change_key_case($_REQUEST,CASE_LOWER)))) { exit(); }
 	if(in_array('_post',array_keys(array_change_key_case($_REQUEST,CASE_LOWER)))) { exit(); }
-	if(array_key_exists('phpnfo',$_GET) && $_GET['phpnfo']==1) { phpinfo(); die(); }
 	require_once(_AAPP_ROOT_PATH._AAPP_APPLICATION_PATH._AAPP_CONFIG_PATH.'/Configuration.php');
-	$app = PAF\AApp::GetInstance();
+	$napp = NApp::GetInstance();
+	if(array_key_exists('phpnfo',$_GET) && $_GET['phpnfo']==1) { phpinfo(); die(); }
 	//Require html/php file
 	$app->SessionCommit();
 ?>
