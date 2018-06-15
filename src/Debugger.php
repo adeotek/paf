@@ -44,12 +44,12 @@ class Debugger {
 	 * @access protected
 	 */
 	protected $debug_extensions = [
-		'Firefox'=>['QuantumPHP'=>['active'=>TRUE,'js'=>FALSE]],
+		'Firefox'=>['QuantumPHP'=>['active'=>FALSE,'js'=>FALSE]],
 		'Chrome'=>[
 			'PhpConsole'=>['active'=>TRUE,'js'=>FALSE],
 			'QuantumPHP'=>['active'=>FALSE,'js'=>FALSE],
 		],
-		'Other'=>['QuantumPHP'=>['active'=>TRUE,'js'=>TRUE]],
+		'Other'=>['QuantumPHP'=>['active'=>FALSE,'js'=>TRUE]],
 	];
 	/**
 	 * @var        boolean Debug mode on/off

@@ -64,7 +64,7 @@ class App extends AppConfig {
 	 * @var    bool State of session before current request (TRUE for existing session or FALSE for newly initialized)
 	 * @access protected
 	 */
-	protected $_aapp_state = FALSE;
+	protected $_app_state = FALSE;
 	/**
 	 * @var    bool Flag for cleaning session data (if is set to TRUE, the session data will be erased on commit)
 	 * @access protected
@@ -218,7 +218,7 @@ class App extends AppConfig {
 			self::$url_path = trim(str_replace(trim(self::$url_path,'/'),'',trim(dirname($_SERVER['SCRIPT_NAME']),'/')),'/');
 			self::$url_path = (strlen(self::$url_path) ? '/'.self::$url_path : '')._AAP_PUBLIC_PATH;
 		} else {
-			self::$url_path = '/'.trim(dirname($_SERVER['SCRIPT_NAME']),'/');
+			self::$url_path = '/'.trim(dirname($_SERVER['SCRIPT_NAME']),'/\\');
 		}//if(strlen($startup_path))
 		return rtrim(self::$url_path,'/');
 	}//END protected static function ExtractUrlPath
