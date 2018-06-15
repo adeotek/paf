@@ -8,7 +8,7 @@
  * @author     George Benjamin-Schonberger
  * @copyright  Copyright (c) 2012 - 2018 AdeoTEK
  * @license    LICENSE.md
- * @version    2.1.0
+ * @version    2.1.2
  * @filesource
  */
 namespace PAF;
@@ -69,22 +69,22 @@ class Debugger {
 	 * @access protected
 	 * @static
 	 */
-	protected static $debug_timers = array();
+	protected static $debug_timers = [];
 	/**
 	 * @var        boolean php console Chrome extension password
 	 * @access     public
 	 */
-	public $phpconsole_password = 'abcd12';
+	public $js_console_password = '12345';
 	/**
 	 * @var        string Relative path to the logs folder
 	 * @access     public
 	 */
-	public $logs_path = 'logs';
+	public $logs_path = '.logs';
 	/**
 	 * @var        string Name of the main log file
 	 * @access     public
 	 */
-	public $log_file = 'application.log';
+	public $log_file = 'app.log';
 	/**
 	 * @var        string Name of the errors log file
 	 * @access     public
@@ -99,7 +99,6 @@ class Debugger {
 	 * Debugger class constructor
 	 *
 	 * @param  boolean $debug Debug mode TRUE/FALSE
-	 * @param  string $path Application absolute path
 	 * @param  string $logs_path Logs directory relative path
 	 * @param  string $tmp_path Temp directory absolute path
 	 * (must be outside document root)
@@ -107,16 +106,15 @@ class Debugger {
 	 * @return void
 	 * @access public
 	 */
-    public function __construct($debug,$path,$logs_path = NULL,$tmp_path = NULL) {
-		if($debug!==TRUE || !strlen($path)) { return; }
+    public function __construct($debug,$logs_path = NULL,$tmp_path = NULL) {
+		if($debug!==TRUE) { return; }
 		if(strlen($logs_path)) { $this->logs_path = $logs_path; }
-		else { $this->logs_path = rtrim($path,'/').'/'.$this->logs_path; }
 		if(array_key_exists('HTTP_USER_AGENT',$_SERVER) && preg_match('/Chrome/',$_SERVER['HTTP_USER_AGENT'])===1) {
-			$this->LoggerInit('Chrome',$path,$tmp_path);
+			$this->LoggerInit('Chrome',$tmp_path);
 		} elseif(array_key_exists('HTTP_USER_AGENT',$_SERVER) && preg_match('/Firefox/',$_SERVER['HTTP_USER_AGENT'])===1) {
-			$this->LoggerInit('Firefox',$path,$tmp_path);
+			$this->LoggerInit('Firefox',$tmp_path);
 		} else {
-			$this->LoggerInit('Other',$path,$tmp_path);
+			$this->LoggerInit('Other',$tmp_path);
 		}//if(...
 		$this->enabled = (is_array($this->debug_objects) && count($this->debug_objects));
 	}//END protected function __construct
@@ -124,13 +122,12 @@ class Debugger {
 	 * Enable PHP browser logger
 	 *
 	 * @param  string $browser_type Browser type extracted from HTTP_USER_AGENT
-	 * @param  string $path Application absolute path
 	 * @param  string $tmp_path Temp directory absolute path
 	 * @return void
 	 * @access protected
 	 * @throws \Exception
 	 */
-	protected function LoggerInit($browser_type,$path = NULL,$tmp_path = NULL) {
+	protected function LoggerInit($browser_type,$tmp_path = NULL) {
 		if(!is_string($browser_type) || !strlen($browser_type)) { return; }
 		if(is_array($this->debug_extensions) && count($this->debug_extensions) && array_key_exists($browser_type,$this->debug_extensions) && is_array($this->debug_extensions[$browser_type]) && count($this->debug_extensions[$browser_type])) {
 				foreach($this->debug_extensions[$browser_type] as $dk=>$dv) {
@@ -138,11 +135,11 @@ class Debugger {
 					switch($dk) {
 						case 'PhpConsole':
 							if(!class_exists('\PhpConsole')) { continue; }
-							\PhpConsole\Connector::setPostponeStorage(new \PhpConsole\Storage\File((strlen($tmp_path) ? rtrim($tmp_path,'/') : rtrim($path,'/')).'/phpcons.data'));
+							\PhpConsole\Connector::setPostponeStorage(new \PhpConsole\Storage\File((strlen($tmp_path) ? rtrim($tmp_path,'/') : '').'/phpcons.data'));
 							$this->debug_objects[$dk] = \PhpConsole\Connector::getInstance();
 							if(\PhpConsole\Connector::getInstance()->isActiveClient()) {
 								$this->debug_objects[$dk]->setServerEncoding('UTF-8');
-								if(isset($this->phpconsole_password) && strlen($this->phpconsole_password)) { $this->debug_objects[$dk]->setPassword($this->phpconsole_password); }
+								if(isset($this->js_console_password) && strlen($this->js_console_password)) { $this->debug_objects[$dk]->setPassword($this->js_console_password); }
 							} else {
 								$this->debug_objects[$dk] = NULL;
 							}//if(\PhpConsole\Connector::getInstance()->isActiveClient())
@@ -352,11 +349,10 @@ class Debugger {
 	/**
 	 * Add entry to log file
 	 *
-	 * @param  string $msg Text to be written to log
+	 * @param  string|array $msg Text to be written to log
 	 * @param  string $file Custom log file complete name (path + name)
 	 * @param  string $script_name Name of the file that sent the message to log (optional)
 	 * @return bool|string Returns TRUE for success or error message on failure
-	 * @throws \PAF\AppException
 	 * @access public
 	 * @static
 	 */
@@ -364,7 +360,7 @@ class Debugger {
 		$lf = strlen($file) ? $file : 'unknown.log';
 		try {
 			$lfile = fopen($lf,'a');
-			if(!$lfile) { throw new \PAF\AppException("Unable to open log file [{$file}]!",E_WARNING,1); }
+			if(!$lfile) { throw new AppException("Unable to open log file [{$file}]!",E_WARNING,1); }
 			if(is_array($msg) && count($msg)>0) {
 				$script_name = (array_key_exists('file',$msg) && strlen($msg['file'])) ? $msg['file'] : (strlen($script_name) ? $script_name : __FILE__);
 				$script_name .= (array_key_exists('line',$msg) && strlen($msg['line'])) ? ' (ln: '.$msg['line'].')' : '';
@@ -378,7 +374,7 @@ class Debugger {
 			fwrite($lfile,'#'.date('Y-m-d H:i:s')."# <{$script_name}>{$type} {$message}\n");
 			fclose($lfile);
 			return TRUE;
-		} catch(\PAF\AppException $e) {
+		} catch(AppException $e) {
 			return $e->getMessage();
 		}//END try
 	}//END public static function AddToLog

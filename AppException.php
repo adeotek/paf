@@ -45,7 +45,7 @@ final class AppException extends \ErrorException {
 	 * (inherited from PDOException)
 	 * @access public
 	 */
-	public $error_info = array();
+	public $error_info = [];
 	/**
 	 * Class constructor method
 	 *
