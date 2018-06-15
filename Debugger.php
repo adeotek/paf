@@ -15,8 +15,6 @@ namespace PAF;
     /**
      * DBG_DEBUG constant definition (used as parameter in PAF class debug methods)
      */
-    use QuantumPHP;
-
     define('DBG_DEBUG','log');
     /**
      * DBG_WARNING constant definition (used as parameter in PAF class debug methods)
@@ -139,29 +137,29 @@ class Debugger {
 					if($dv['active']!==TRUE) { continue; }
 					switch($dk) {
 						case 'PhpConsole':
-						require_once(rtrim($path,'/').'/'.$dk.'/__autoload.php');
-						\PhpConsole\Connector::setPostponeStorage(new \PhpConsole\Storage\File((strlen($tmp_path) ? rtrim($tmp_path,'/') : rtrim($path,'/')).'/phpcons.data'));
-						$this->debug_objects[$dk] = \PhpConsole\Connector::getInstance();
-						if(\PhpConsole\Connector::getInstance()->isActiveClient()) {
-							$this->debug_objects[$dk]->setServerEncoding('UTF-8');
-							if(isset($this->phpconsole_password) && strlen($this->phpconsole_password)) { $this->debug_objects[$dk]->setPassword($this->phpconsole_password); }
-						} else {
-							$this->debug_objects[$dk] = NULL;
-						}//if(\PhpConsole\Connector::getInstance()->isActiveClient())
+							if(!class_exists('\PhpConsole')) { continue; }
+							\PhpConsole\Connector::setPostponeStorage(new \PhpConsole\Storage\File((strlen($tmp_path) ? rtrim($tmp_path,'/') : rtrim($path,'/')).'/phpcons.data'));
+							$this->debug_objects[$dk] = \PhpConsole\Connector::getInstance();
+							if(\PhpConsole\Connector::getInstance()->isActiveClient()) {
+								$this->debug_objects[$dk]->setServerEncoding('UTF-8');
+								if(isset($this->phpconsole_password) && strlen($this->phpconsole_password)) { $this->debug_objects[$dk]->setPassword($this->phpconsole_password); }
+							} else {
+								$this->debug_objects[$dk] = NULL;
+							}//if(\PhpConsole\Connector::getInstance()->isActiveClient())
 							break;
 						case 'QuantumPHP':
-							require_once(rtrim($path,'/').'/QuantumPhp/'.$dk.'.php');
+							if(!class_exists('\QuantumPHP')) { continue; }
 							switch($browser_type) {
 								case 'Chrome':
-										QuantumPHP::$MODE = 3;
+									\QuantumPHP::$MODE = 3;
 									break;
 								case 'Firefox':
-										QuantumPHP::$MODE = 2;
+									\QuantumPHP::$MODE = 2;
 									break;
 								default:
-										QuantumPHP::$MODE = 1;
+									\QuantumPHP::$MODE = 1;
 									if(!is_array($this->debug_scripts)) { $this->debug_scripts = []; }
-									$this->debug_scripts[$dk] = '/QuantumPhp/QuantumPHP.min.js';
+									$this->debug_scripts[$dk] = 'QuantumPHP.min.js';
 									break;
 							}//END swith
 							$this->debug_objects[$dk] = $dk;
@@ -181,7 +179,7 @@ class Debugger {
 			foreach($this->debug_objects as $dk=>$dv) {
 				switch($dk) {
 					case 'QuantumPHP':
-							QuantumPHP::send();
+							\QuantumPHP::send();
 						break;
 					default:
 						break;
@@ -246,26 +244,26 @@ class Debugger {
 					if(!class_exists('\\QuantumPHP')) { break; }
 						switch($type) {
 							case DBG_WARNING:
-								QuantumPHP::add($value,'warning');
+								\QuantumPHP::add($value,'warning');
 								break;
 							case DBG_ERROR:
 							if(is_object($value) && strpos(get_class($value),'Exception')!==FALSE) {
-									QuantumPHP::add($label,'error',$value);
+									\QuantumPHP::add($label,'error',$value);
 							} else {
-									QuantumPHP::add($value,'error');
+									\QuantumPHP::add($value,'error');
 							}//if(is_object($value) && strpos(get_class($value),'Exception')!==FALSE)
 								break;
 							case DBG_INFO:
-								QuantumPHP::log($label.': '.print_r($value,1));
+								\QuantumPHP::log($label.': '.print_r($value,1));
 								break;
 						  	case DBG_DEBUG:
 						  	default:
 						    if(is_null($value)) {
-							        QuantumPHP::log($label.': [NULL]');
+							        \QuantumPHP::log($label.': [NULL]');
 						    } elseif(is_string($value)) {
-							        QuantumPHP::log($label.': '.$value);
+							        \QuantumPHP::log($label.': '.$value);
 						    } else {
-							        QuantumPHP::add($value,$label,FALSE,FALSE,FALSE,FALSE,TRUE);
+							        \QuantumPHP::add($value,$label,FALSE,FALSE,FALSE,FALSE,TRUE);
 						    }//if(is_null($value))
 								break;
 						}//END switch($type)
