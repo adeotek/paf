@@ -13,7 +13,7 @@
  */
 namespace PAF;
 if(!defined('_VALID_AAPP_REQ') || _VALID_AAPP_REQ!==TRUE) { die('Invalid request!'); }
-require_once(__DIR__.'/helpers.php');
+// require_once(__DIR__.'/helpers.php');
 /**
  * AppConfig is the application global configuration class
  *
@@ -45,7 +45,7 @@ class AppConfig {
 	 */
 	public static function LoadConfig(array $data,array $structure) {
 		require_once(__DIR__.'/PAFConfigStructure.php');
-		if(!isset($_PAF_CONFIG_STRUCTURE) || !is_array($_PAF_CONFIG_STRUCTURE)) { die('Invalid configuration structure!'); }
+		if(!isset($_PAF_CONFIG_STRUCTURE) || !is_array($_PAF_CONFIG_STRUCTURE)) { die('Invalid PAF configuration structure!'); }
 		self::$structure = array_merge($_PAF_CONFIG_STRUCTURE,$structure);
 		self::$data = $data;
 	}//END public static function LoadConfig

@@ -1,6 +1,6 @@
 <?php
 /**
- * PAF (PHP AJAX Framework) session class file.
+ * PAF (PHP AJAX Framework) session class file
  *
  * The PAF session class can be used for interacting with the session data.
  *
@@ -13,7 +13,7 @@
  */
 namespace PAF;
 /**
- * PAF session class.
+ * PAF session class
  *
  * PHP AJAX Framework session class.
  *
