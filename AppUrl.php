@@ -106,7 +106,7 @@ class AppUrl {
 		$this->url_folder = $url_folder;
 		$uri_len = strpos($_SERVER['REQUEST_URI'],'?')!==FALSE ? strpos($_SERVER['REQUEST_URI'],'?') : (strpos($_SERVER['REQUEST_URI'],'#')!==FALSE ? strpos($_SERVER['REQUEST_URI'],'#') : strlen($_SERVER['REQUEST_URI']));
 		$this->url_base = $this->app_web_protocol.$this->app_domain.substr($_SERVER['REQUEST_URI'],0,$uri_len);
-		$this->data = is_array($_GET) ? $this->SetUrlParams($_GET) : [];
+		$this->data = is_array($_GET) ? $this->SetParams($_GET) : [];
 	}//END public function __construct
 	/**
 	 * @return string
