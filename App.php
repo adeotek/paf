@@ -469,8 +469,7 @@ class App implements IApp {
 		if(AppConfig::debug()!==TRUE || !class_exists('PAF\Debugger')) { return FALSE; }
 		if(is_object($this->debugger)) { return $this->debugger->IsEnabled(); }
 		$tmp_path = isset($_SERVER['DOCUMENT_ROOT']) && strpos(_AAPP_ROOT_PATH, $_SERVER['DOCUMENT_ROOT'])!==FALSE ? _AAPP_ROOT_PATH.'/../tmp' : _AAPP_ROOT_PATH._AAPP_APPLICATION_PATH.'/tmp';
-		$this->debugger = new Debugger(self::$debug,_AAPP_ROOT_PATH._AAPP_APPLICATION_PATH.AppConfig::logs_path(),$tmp_path);
-		$this->debugger->js_console_password = AppConfig::js_console_password();
+		$this->debugger = new Debugger(AppConfig::debug(),_AAPP_ROOT_PATH._AAPP_APPLICATION_PATH.AppConfig::logs_path(),$tmp_path,AppConfig::debug_console_password());
 		$this->debugger->log_file = AppConfig::log_file();
 		$this->debugger->errors_log_file = AppConfig::errors_log_file();
 		$this->debugger->debug_log_file = AppConfig::debug_log_file();

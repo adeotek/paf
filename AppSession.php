@@ -270,7 +270,7 @@ class AppSession {
 		$dbg_data .= 'Do not keep alive: '.($do_not_keep_alive!==TRUE && $do_not_keep_alive!==1 ? 'FALSE' : 'TRUE')."\n";
 		if($do_not_keep_alive!==TRUE && $do_not_keep_alive!==1) { $_SESSION['X_SEXT'] = time(); }
 		// vprint($dbg_data);
-		// self::Log2File($dbg_data,$absolute_path.self::$logs_path.'/'.self::$debugging_log_file);
+		// self::Log2File($dbg_data,$absolute_path.AppConfig::logs_path().'/'.AppConfig::debugging_log_file());
 		self::$data = $_SESSION;
 		self::$initial_data = self::$data;
 		if(AppConfig::async_session() && $ajax) { AppSession::SessionClose(); }

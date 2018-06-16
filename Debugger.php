@@ -71,10 +71,10 @@ class Debugger {
 	 */
 	protected static $debug_timers = [];
 	/**
-	 * @var        boolean php console Chrome extension password
-	 * @access     public
+	 * @var        string Browser console password (extension)
+	 * @access     protected
 	 */
-	public $js_console_password = '12345';
+	protected $js_console_password = '';
 	/**
 	 * @var        string Relative path to the logs folder
 	 * @access     public
@@ -99,15 +99,16 @@ class Debugger {
 	 * Debugger class constructor
 	 *
 	 * @param  boolean $debug Debug mode TRUE/FALSE
-	 * @param  string $logs_path Logs directory relative path
-	 * @param  string $tmp_path Temp directory absolute path
+	 * @param  string  $logs_path Logs directory relative path
+	 * @param  string  $tmp_path Temp directory absolute path
 	 * (must be outside document root)
+	 * @param null     $console_password
 	 * @throws \Exception
-	 * @return void
 	 * @access public
 	 */
-    public function __construct($debug,$logs_path = NULL,$tmp_path = NULL) {
+    public function __construct($debug,$logs_path = NULL,$tmp_path = NULL,$console_password = NULL) {
 		if($debug!==TRUE) { return; }
+		if(strlen($console_password)) { $this->js_console_password = $console_password; }
 		if(strlen($logs_path)) { $this->logs_path = $logs_path; }
 		if(array_key_exists('HTTP_USER_AGENT',$_SERVER) && preg_match('/Chrome/',$_SERVER['HTTP_USER_AGENT'])===1) {
 			$this->LoggerInit('Chrome',$tmp_path);
@@ -128,42 +129,40 @@ class Debugger {
 	 * @throws \Exception
 	 */
 	protected function LoggerInit($browser_type,$tmp_path = NULL) {
-		if(!is_string($browser_type) || !strlen($browser_type)) { return; }
-		if(is_array($this->debug_extensions) && count($this->debug_extensions) && array_key_exists($browser_type,$this->debug_extensions) && is_array($this->debug_extensions[$browser_type]) && count($this->debug_extensions[$browser_type])) {
-				foreach($this->debug_extensions[$browser_type] as $dk=>$dv) {
-					if($dv['active']!==TRUE) { continue; }
-					switch($dk) {
-						case 'PhpConsole':
-							if(!class_exists('\PhpConsole')) { continue; }
-							\PhpConsole\Connector::setPostponeStorage(new \PhpConsole\Storage\File((strlen($tmp_path) ? rtrim($tmp_path,'/') : '').'/phpcons.data'));
-							$this->debug_objects[$dk] = \PhpConsole\Connector::getInstance();
-							if(\PhpConsole\Connector::getInstance()->isActiveClient()) {
-								$this->debug_objects[$dk]->setServerEncoding('UTF-8');
-								if(isset($this->js_console_password) && strlen($this->js_console_password)) { $this->debug_objects[$dk]->setPassword($this->js_console_password); }
-							} else {
-								$this->debug_objects[$dk] = NULL;
-							}//if(\PhpConsole\Connector::getInstance()->isActiveClient())
+		if(!is_string($browser_type) || !strlen($browser_type) || !is_array($this->debug_extensions) || !count($this->debug_extensions) || !array_key_exists($browser_type,$this->debug_extensions) || !is_array($this->debug_extensions[$browser_type]) || !count($this->debug_extensions[$browser_type])) { return; }
+		foreach($this->debug_extensions[$browser_type] as $dk=>$dv) {
+			if($dv['active']!==TRUE) { continue; }
+			switch($dk) {
+				case 'PhpConsole':
+					if(!class_exists('\PhpConsole\Connector')) { continue; }
+					\PhpConsole\Connector::setPostponeStorage(new \PhpConsole\Storage\File((strlen($tmp_path) ? rtrim($tmp_path,'/') : '').'/phpcons.data'));
+					$this->debug_objects[$dk] = \PhpConsole\Connector::getInstance();
+					if(\PhpConsole\Connector::getInstance()->isActiveClient()) {
+						$this->debug_objects[$dk]->setServerEncoding('UTF-8');
+						if(isset($this->js_console_password) && strlen($this->js_console_password)) { $this->debug_objects[$dk]->setPassword($this->js_console_password); }
+					} else {
+						$this->debug_objects[$dk] = NULL;
+					}//if(\PhpConsole\Connector::getInstance()->isActiveClient())
+					break;
+				case 'QuantumPHP':
+					if(!class_exists('\QuantumPHP')) { continue; }
+					switch($browser_type) {
+						case 'Chrome':
+							\QuantumPHP::$MODE = 3;
 							break;
-						case 'QuantumPHP':
-							if(!class_exists('\QuantumPHP')) { continue; }
-							switch($browser_type) {
-								case 'Chrome':
-									\QuantumPHP::$MODE = 3;
-									break;
-								case 'Firefox':
-									\QuantumPHP::$MODE = 2;
-									break;
-								default:
-									\QuantumPHP::$MODE = 1;
-									if(!is_array($this->debug_scripts)) { $this->debug_scripts = []; }
-									$this->debug_scripts[$dk] = 'QuantumPHP.min.js';
-									break;
-							}//END swith
-							$this->debug_objects[$dk] = $dk;
+						case 'Firefox':
+							\QuantumPHP::$MODE = 2;
 							break;
-					}//END switch
-				}//END foreach
-			}//if(is_array($this->debug_extensions) && count($this->debug_extensions) && array_key_exists($browser_type,$this->debug_extensions) && is_array($this->debug_extensions[$browser_type]) && count($this->debug_extensions[$browser_type]))
+						default:
+							\QuantumPHP::$MODE = 1;
+							if(!is_array($this->debug_scripts)) { $this->debug_scripts = []; }
+							$this->debug_scripts[$dk] = 'QuantumPHP.min.js';
+							break;
+					}//END swith
+					$this->debug_objects[$dk] = $dk;
+					break;
+			}//END switch
+		}//END foreach
 	}//END protected function LoggerInit
 	/**
 	 * Send data to browser

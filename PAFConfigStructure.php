@@ -72,7 +72,7 @@ if(!defined('_VALID_AAPP_REQ') || _VALID_AAPP_REQ!==TRUE) { die('Invalid request
 		// Show debug invocation source file name and path in browser console on/off
 		'console_show_file'=>['type'=>'public','default'=>TRUE,'validation'=>'bool'],
 		// Javascript php console password
-		'js_console_password'=>['type'=>'readonly','default'=>'12345','validation'=>'is_string'],
+		'debug_console_password'=>['type'=>'readonly','default'=>'112233','validation'=>'is_string'],
 		// Relative path to the logs folder
 		'logs_path'=>['type'=>'readonly','default'=>'/.logs','validation'=>'is_notempty_string'],
 		// Name of the main log file
