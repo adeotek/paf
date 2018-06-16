@@ -275,41 +275,6 @@ class App implements IApp {
 		return $this->app_absolute_path;
 	}//END public function GetAppAbsolutePath
 	/**
-	 * Gets the current application framework version
-	 *
-	 * @param  string $type Specifies the return type:
-	 * - NULL or empty string (default) for return as string
-	 * - 'array' for return as array (key-value)
-	 * - 'major' for return only the major version as int
-	 * - 'minor' for return only the minor version as int
-	 * - 'build' for return only the build version as int
-	 * @return mixed Returns the application framework version
-	 * @access public
-	 */
-	public function GetFrameworkVersion($type = NULL) {
-		switch($type) {
-		    case 'array':
-				$ver_arr = explode('.',AppConfig::framework_version());
-				return array('major'=>$ver_arr[0],'minor'=>$ver_arr[1],'build'=>$ver_arr[2]);
-				break;
-			case 'major':
-				$ver_arr = explode('.',AppConfig::framework_version());
-				return intval($ver_arr[0]);
-				break;
-			case 'minor':
-				$ver_arr = explode('.',AppConfig::framework_version());
-				return intval($ver_arr[1]);
-				break;
-			case 'buid':
-				$ver_arr = explode('.',AppConfig::framework_version());
-				return intval($ver_arr[2]);
-				break;
-		    default:
-				return AppConfig::framework_version();
-				break;
-		}//END switch
-	}//END public function GetFrameworkVersion
-	/**
 	 * @return bool
 	 */
 	public function OutputBufferStarted() {

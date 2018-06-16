@@ -230,9 +230,9 @@ class AppUrl {
 	 * @return string|null
 	 * @access public
 	 */
-	public function GetUrlParam($key,$full = FALSE) {
+	public function GetParam($key,$full = FALSE) {
 		return $this->GetComplexParam($key,$full!==TRUE,TRUE);
-	}//END public function GetUrlParam
+	}//END public function GetParam
 	/**
 	 * Set a simple parameter into the url data array
 	 *
@@ -241,9 +241,9 @@ class AppUrl {
 	 * @return bool
 	 * @access public
 	 */
-	public function SetUrlParam($key,$val) {
+	public function SetParam($key,$val) {
 		return $this->SetComplexParam($key,array($val=>''));
-	}//END public function SetUrlParam
+	}//END public function SetParam
 	/**
 	 * Unset a parameter from the url data array
 	 *
@@ -251,9 +251,9 @@ class AppUrl {
 	 * @return void
 	 * @access public
 	 */
-	public function UnsetUrlParam($key) {
+	public function UnsetParam($key) {
 		$this->UnsetComplexParam($key);
-	}//END public function UnsetUrlParam
+	}//END public function UnsetParam
 	/**
 	 * Gets n-th element from a parameter in the url data array
 	 *
@@ -318,7 +318,7 @@ class AppUrl {
 	 * @return array
 	 * @access public
 	 */
-	public function SetUrlParams($url) {
+	public function SetParams($url) {
 		$result = array();
 		if(is_array($url)) {
 			foreach ($url as $k=>$v) { $result[$k] = $this->GetParamElements($v); }
@@ -334,7 +334,7 @@ class AppUrl {
 			}//if(strlen($param_str)>0)
 		}//if(is_array($url))
 		return $result;
-	}//END public function SetUrlParams
+	}//END public function SetParams
 	/**
 	 * description
 	 *

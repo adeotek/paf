@@ -15,6 +15,8 @@ if(!defined('_VALID_AAPP_REQ') || _VALID_AAPP_REQ!==TRUE) { die('Invalid request
 
 	$_PAF_CONFIG_STRUCTURE = [
 	//START Session configuration
+		// Server timezone
+		'server_timezone'=>['type'=>'readonly','default'=>'Europe/Bucharest','validation'=>'is_notempty_string'],
 		// PHP Session name
 		'session_name'=>['type'=>'readonly','default'=>'PHPSESSID','validation'=>'is_notempty_string'],
 		// Use session splitting by window.name or not

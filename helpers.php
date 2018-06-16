@@ -9,7 +9,7 @@
  * @author     George Benjamin-Schonberger
  * @copyright  Copyright (c) 2012 - 2018 AdeoTEK
  * @license    LICENSE.md
- * @version    2.1.0
+ * @version    2.1.2
  * @filesource
  */
 	/**
@@ -253,6 +253,7 @@
 	 * @param   string $rsep The string used as row separator.
 	 * @param   string $csep The string used as column separator.
 	 * @param   string $ksep The string used as column key-value separator.
+	 * @param int      $keys_case
 	 * @return  array The exploded multi-level array.
 	 */
 	function explode_to_table($str,$rsep = '|:|',$csep = ']#[',$ksep = NULL,$keys_case = CASE_LOWER) {
@@ -527,11 +528,11 @@
 	/**
 	 * Custom round numeric values
 	 *
-	 * @param  numeric $value The numeric value to be rounded
-	 * @param  numeric $scale The rounding precision (number of decimals to keep)
+	 * @param  float $value The numeric value to be rounded
+	 * @param  float $scale The rounding precision (number of decimals to keep)
 	 * @param int      $step The step value for rounding (integers from 1 to 9)
 	 * @param int      $mode Rounding mode: 1 = round up, 0 = mathematical round (default) and -1 = round down
-	 * @return numeric Returns the rounded number or FALSE on wrong params
+	 * @return float Returns the rounded number or FALSE on wrong params
 	 */
 	function custom_round($value,$scale,$step = 1,$mode = 0) {
 		if(!is_numeric($value) || !is_numeric($scale)) { return FALSE; }
@@ -587,7 +588,7 @@
 	/**
 	 * Converts a date from excel serial to unix time stamp
 	 *
-	 * @param  numeric $date The date to be converted from excel serial format
+	 * @param  float $date The date to be converted from excel serial format
 	 * @param  string $timezone User's time zone
 	 * @param  string $new_timezone The time zone for the string data to be converted
 	 * @param  string $format The format in which the string data will be outputed
@@ -621,7 +622,7 @@
 	 */
 	function get_timestamp($date,$timezone = NULL,$new_timezone = NULL) {
 		try {
-			$dt = new DateTime($date,new DateTimeZone(strlen($timezone) ? $timezone : \PAF\AppConfig::$server_timezone));
+			$dt = new DateTime($date,new DateTimeZone(strlen($timezone) ? $timezone : \PAF\AppConfig::server_timezone()));
 			if(strlen($new_timezone)) {
 				$dt->setTimezone(new DateTimeZone($new_timezone));
 			}//if(strlen($new_timezone))
@@ -660,7 +661,7 @@
 	 * or NULL for all
 	 * @param  int    $sort Sort type in php scandir() format (default SCANDIR_SORT_ASCENDING)
 	 * @param  array  $dir_exclude An array of folders to be excluded (at any level of the tree)
-	 * @return array  Returns an array of found files
+	 * @return array|bool  Returns an array of found files
 	 */
 	function get_files_recursive($path,$extensions = NULL,$exclude = NULL,$sort = SCANDIR_SORT_ASCENDING,$dir_exclude = NULL) {
 		if(!$path || !file_exists($path)) { return FALSE; }
@@ -739,7 +740,7 @@
 	/**
 	 * Convert number (integer part) to words representation
 	 *
-	 * @param numeric $value Number to be converted (only integer part will be processed)
+	 * @param float $value Number to be converted (only integer part will be processed)
 	 * @param string $langcode Language code
 	 * @return null|string
 	 */
@@ -896,16 +897,27 @@
 		return NULL;
 	}//END function get_file_mime_type_by_extension
 
+	/**
+	 * @param $string
+	 * @return null|string
+	 */
 	function custom_nl2br($string) {
 		if(!is_string($string)) { return NULL; }
 		return nl2br(str_replace("\t",'&nbsp;&nbsp;&nbsp;',$string));
 	}//END function custom_nl2br
-
+	/**
+	 * @param $string
+	 * @return mixed|null
+	 */
 	function custom_br2nl($string) {
 		if(!is_string($string)) { return NULL; }
 		return str_replace('&nbsp;&nbsp;&nbsp;',"\t",str_replace(array('<br/>','<br />','<br>'),"\n",$string));
 	}//END function custom_br2nl
-
+	/**
+	 * @param      $data
+	 * @param bool $for_html
+	 * @return mixed|string
+	 */
 	function safe_json_encode($data,$for_html = TRUE) {
 		$result = json_encode($data);
 		if($for_html) {
@@ -916,7 +928,13 @@
 		}//if($for_html)
 		return $result;
 	}//END function safe_json_encode
-
+	/**
+	 * @param      $var
+	 * @param bool $html_entities
+	 * @param bool $return
+	 * @param bool $utf8encode
+	 * @return string|null
+	 */
 	function vprint($var,$html_entities = FALSE,$return = FALSE,$utf8encode = FALSE) {
 		if(is_string($var)) { $result = $var; }
 		else { $result = print_r($var,TRUE); }
@@ -928,8 +946,14 @@
 		}//if($html_entities)
 		if($return===TRUE) { return $result; }
 		echo $result;
+		return NULL;
 	}//END function vprint
-
+	/**
+	 * @param        $array
+	 * @param string $separator
+	 * @param null   $parent
+	 * @return bool|string
+	 */
 	function array2string($array,$separator = '|',$parent = NULL) {
 		if(!is_array($array) || !count($array)) { return FALSE; }
 		$result = '';
