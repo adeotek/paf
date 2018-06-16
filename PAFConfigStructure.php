@@ -26,10 +26,10 @@ if(!defined('_VALID_AAPP_REQ') || _VALID_AAPP_REQ!==TRUE) { die('Invalid request
 		// Session timeout in seconds
 		'session_timeout'=>['type'=>'readonly','default'=>3600,'validation'=>'is_not0_integer'],
 		// Use redis for session storage
-		'session_redis'=>['type'=>'readonly','default'=>TRUE,'validation'=>'bool'],
+		'session_redis'=>['type'=>'readonly','default'=>FALSE,'validation'=>'bool'],
 		// Redis server connection string (host_name:port?params)
 		'session_redis_server'=>['type'=>'readonly','default'=>'tcp://127.0.0.1:6379?timeout=1&weight=1&database=0','validation'=>'is_notempty_string'],
-		// Use redis for session storage
+		// Use memcache for session storage
 		'session_memcached'=>['type'=>'readonly','default'=>FALSE,'validation'=>'bool'],
 		// Memcache server connection string (host_name:port)
 		'session_memcached_server'=>['type'=>'readonly','default'=>'localhost:11211','validation'=>'is_notempty_string'],
@@ -52,7 +52,7 @@ if(!defined('_VALID_AAPP_REQ') || _VALID_AAPP_REQ!==TRUE) { die('Invalid request
 		// PAF implementing class file full name (including path)
 		'ajax_class_file'=>['type'=>'readonly','default'=>'','validation'=>'is_string'],
 		// Javascript on request completed callback
-		'app_areq_js_callbak'=>['type'=>'readonly','default'=>'','validation'=>'is_string'],
+		'app_areq_js_callback'=>['type'=>'readonly','default'=>'','validation'=>'is_string'],
 		// Secure http support on/off
 		'app_secure_http'=>['type'=>'readonly','default'=>TRUE,'validation'=>'bool'],
 		// Parameters sent as value encryption on/off
