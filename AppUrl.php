@@ -48,14 +48,14 @@ class AppUrl {
 	protected $url_base = NULL;
 	/**
 	 * @var    array GET (URL) data
-	 * @access protected
+	 * @access public
 	 */
-	protected $url_data = [];
+	public $data = [];
 	/**
 	 * @var    array GET (URL) special parameters list
 	 * @access public
 	 */
-	public $special_url_params = array('language','urlid');
+	public $special_params = array('language','urlid');
 	/**
 	 * @var    string URL virtual path
 	 * @access public
@@ -106,8 +106,14 @@ class AppUrl {
 		$this->url_folder = $url_folder;
 		$uri_len = strpos($_SERVER['REQUEST_URI'],'?')!==FALSE ? strpos($_SERVER['REQUEST_URI'],'?') : (strpos($_SERVER['REQUEST_URI'],'#')!==FALSE ? strpos($_SERVER['REQUEST_URI'],'#') : strlen($_SERVER['REQUEST_URI']));
 		$this->url_base = $this->app_web_protocol.$this->app_domain.substr($_SERVER['REQUEST_URI'],0,$uri_len);
-		$this->url_data = is_array($_GET) ? $this->SetUrlParams($_GET) : [];
+		$this->data = is_array($_GET) ? $this->SetUrlParams($_GET) : [];
 	}//END public function __construct
+	/**
+	 * @return string
+	 */
+	public function GetCurrentUrl(): string {
+		return $this->app_web_protocol.$this->app_domain.(isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '');
+	}//END public function GetCurrentUrl
 	/**
 	 * @return string
 	 */
@@ -189,7 +195,7 @@ class AppUrl {
 	 * @access public
 	 */
 	public function GetComplexParam($key,$string = FALSE,$keysonly = FALSE) {
-		$result = array_key_exists($key,$this->url_data) ? $this->url_data[$key] : NULL;
+		$result = array_key_exists($key,$this->data) ? $this->data[$key] : NULL;
 		if($string===TRUE && isset($result)) { return $this->ParamToString($result,$keysonly); }
 		return $result;
 	}//END public function GetComplexParam
@@ -203,7 +209,7 @@ class AppUrl {
 	 */
 	public function SetComplexParam($key,$val) {
 		if(!is_array($key) || !count($val)) { return FALSE; }
-		$this->url_data[$key] = $val;
+		$this->data[$key] = $val;
 		return TRUE;
 	}//END public function SetComplexParam
 	/**
@@ -214,7 +220,7 @@ class AppUrl {
 	 * @access public
 	 */
 	public function UnsetComplexParam($key) {
-		unset($this->url_data[$key]);
+		unset($this->data[$key]);
 	}//END public function UnsetComplexParam
 	/**
 	 * Get a simple parameter from the url data array
@@ -257,20 +263,20 @@ class AppUrl {
 	 * @access public
 	 */
 	public function GetParamElement($key,$position = 0) {
-		if(strlen($key)>0 && array_key_exists($key,$this->url_data)) {
-			if(is_array($this->url_data[$key])) {
+		if(strlen($key)>0 && array_key_exists($key,$this->data)) {
+			if(is_array($this->data[$key])) {
 				$i = 0;
-				foreach ($this->url_data[$key] as $k=>$v) {
+				foreach ($this->data[$key] as $k=>$v) {
 					if($i==$position) {
 						return $k;
 					} else {
 						$i++;
 					}//if($i==$position)
-				}//foreach ($this->url_data[$key] as $k=>$v)
+				}//foreach ($this->data[$key] as $k=>$v)
 			} else {
-				return $this->url_data[$key];
-			}//if(is_array($this->url_data[$key]))
-		}//if(strlen($key)>0 && array_key_exists($key,$this->url_data))
+				return $this->data[$key];
+			}//if(is_array($this->data[$key]))
+		}//if(strlen($key)>0 && array_key_exists($key,$this->data))
 		return NULL;
 	}//END public function GetParamElement
 	/**
@@ -284,13 +290,13 @@ class AppUrl {
 	 */
 	public function SetParamElement($key,$element,$text = '') {
 		if(is_null($key) || is_null($element)) { return FALSE; }
-		$this->url_data[$key] = is_array($this->url_data[$key]) ? $this->url_data[$key] : array();
+		$this->data[$key] = is_array($this->data[$key]) ? $this->data[$key] : array();
 		if(is_array($element)) {
 			foreach ($element as $k=>$v) {
-				$this->url_data[$key][$k] = str_to_url($v);
+				$this->data[$key][$k] = str_to_url($v);
 			}//foreach ($element as $k=>$v)
 		} else {
-			$this->url_data[$key][$element] = str_to_url($text);
+			$this->data[$key][$element] = str_to_url($text);
 		}//if(is_array($element))
 	}//END public function SetParamElement
 	/**
@@ -303,7 +309,7 @@ class AppUrl {
 	 */
 	public function UnsetParamElement($key,$element) {
 		if(is_null($key) || is_null($element)) { return FALSE; }
-		unset($this->url_data[$key][$element]);
+		unset($this->data[$key][$element]);
 	}//END public function UnsetParamElement
 	/**
 	 * description
@@ -349,10 +355,10 @@ class AppUrl {
 					$urlid = array_key_exists('urlid',$params) ? $this->ParamToString($params['urlid']) : NULL;
 				}//if(is_array($params) && count($params))
 				if(is_null($lang)) {
-					$lang = array_key_exists('language',$this->url_data) ? $this->ParamToString($this->url_data['language']) : NULL;
+					$lang = array_key_exists('language',$this->data) ? $this->ParamToString($this->data['language']) : NULL;
 				}//if(is_null($lang))
 				if(is_null($urlid)) {
-					$urlid = array_key_exists('urlid',$this->url_data) ? $this->ParamToString($this->url_data['urlid']) : NULL;
+					$urlid = array_key_exists('urlid',$this->data) ? $this->ParamToString($this->data['urlid']) : NULL;
 				}//if(is_null($urlid))
 				return $this->GetWebLink().'/'.(strlen($this->url_virtual_path) ? $this->url_virtual_path.'/' : '').(strlen($lang) ? $lang.'/' : '').(strlen(trim($urlid,'/')) ? trim($urlid,'/').'/' : '');
 			case URL_FORMAT_FRIENDLY_ORIGINAL:
@@ -385,9 +391,9 @@ class AppUrl {
 					$anchor = $this->ParamToString($v);
 					continue;
 				}//if($k=='anchor')
-				if(($lurl_format==URL_FORMAT_FRIENDLY || $lurl_format==URL_FORMAT_FRIENDLY_ORIGINAL) && in_array($k,$this->special_url_params)) { continue; }
+				if(($lurl_format==URL_FORMAT_FRIENDLY || $lurl_format==URL_FORMAT_FRIENDLY_ORIGINAL) && in_array($k,$this->special_params)) { continue; }
 				$val = $this->ParamToString($v);
-				if(in_array($k,$this->special_url_params) && !$val) { continue; }
+				if(in_array($k,$this->special_params) && !$val) { continue; }
 				$prefix = '&';
 				if($first) {
 					$first = FALSE;
@@ -408,7 +414,7 @@ class AppUrl {
 	 * @access public
 	 */
 	public function GetUrl($params = NULL,$rparams = NULL,$url_format = URL_FORMAT_FRIENDLY) {
-		$data = $this->url_data;
+		$data = $this->data;
 		if(is_array($rparams) && count($rparams)) {
 			foreach($rparams as $key=>$value) {
 				if(is_array($value)) {
@@ -432,13 +438,13 @@ class AppUrl {
 	 */
 	public function ElementExists($key,$element = NULL) {
 		if(is_null($element)) {
-			if(array_key_exists($key,$this->url_data) && isset($this->url_data[$key])) {
+			if(array_key_exists($key,$this->data) && isset($this->data[$key])) {
 				return TRUE;
-			}//if(array_key_exists($key,$this->url_data) && isset($this->url_data[$key]))
+			}//if(array_key_exists($key,$this->data) && isset($this->data[$key]))
 		} else {
-			if(array_key_exists($key,$this->url_data) && array_key_exists($element,$this->url_data[$key])) {
+			if(array_key_exists($key,$this->data) && array_key_exists($element,$this->data[$key])) {
 				return TRUE;
-			}//if(array_key_exists($key,$this->url_data) && array_key_exists($element,$this->url_data[$key]))
+			}//if(array_key_exists($key,$this->data) && array_key_exists($element,$this->data[$key]))
 		}//if(is_null($element))
 		return FALSE;
 	}//END public function ElementExists

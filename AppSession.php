@@ -293,6 +293,22 @@ class AppSession {
 		self::$session_started = FALSE;
 	}//END public static function SessionClose
 	/**
+	 * Get session data
+	 *
+	 * @return array
+	 */
+	public static function GetData(): array {
+		return self::$data;
+	}//END public static function GetData
+	/**
+	 * Set session data
+	 *
+	 * @param array $data
+	 */
+	public static function SetData(array $data): void {
+		self::$data = $data;
+	}//END public static function SetData
+	/**
 	 * Gets a session parameter at a certain path (path = a succession of keys of the session data array)
 	 *
 	 * @param  string $key The key of the searched parameter
