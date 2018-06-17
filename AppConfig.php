@@ -44,7 +44,7 @@ class AppConfig {
 	 * @throws \Exception
 	 */
 	public static function LoadConfig(array $data,array $structure) {
-		require_once(__DIR__.'/PAFConfigStructure.php');
+		require_once(__DIR__.'/paf_cfg_structure.php');
 		if(!isset($_PAF_CONFIG_STRUCTURE) || !is_array($_PAF_CONFIG_STRUCTURE)) { die('Invalid PAF configuration structure!'); }
 		self::$structure = array_merge($_PAF_CONFIG_STRUCTURE,$structure);
 		self::$data = $data;
