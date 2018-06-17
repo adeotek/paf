@@ -249,7 +249,7 @@ class AppSession {
 		$dbg_data .= 'Last request: '.(isset($_SESSION['X_SEXT']) ? (time()-$_SESSION['X_SEXT']) : 'N/A')."\n";
 		$dbg_data .= 'X_SKEY: '.(isset($_SESSION['X_SKEY']) ? $_SESSION['X_SKEY'] : 'N/A')."\n";
 		$session_key = AppConfig::session_key();
-        if(!isset($_SESSION['X_SEXT']) || !isset($_SESSION['X_SKEY']) || ($_SESSION['X_SEXT']+$session_timeout)<time() || $_SESSION['X_SKEY']!=AppSession::GetNewUID($session_key.session_id(),'sha256',TRUE)) {
+        if(!isset($_SESSION['X_SEXT']) || !isset($_SESSION['X_SKEY']) || ($_SESSION['X_SEXT']+$session_timeout)<time() || $_SESSION['X_SKEY']!=self::GetNewUID($session_key.session_id(),'sha256',TRUE)) {
             $dbg_data .= 'Do: SESSION RESET'."\n";
         	$_SESSION = [];
 		    setcookie(session_name(),'',time()-4200,'/',$cdomain);
@@ -259,14 +259,14 @@ class AppSession {
 			ini_set('cookie_domain',$cdomain);
 			ini_set('session.gc_maxlifetime',$session_timeout);
 			ini_set('session.cache_expire',$session_timeout/60);
-			$new_session_id = AppSession::GetNewUID($cfulldomain.$cuseragent.$cremoteaddress,'sha256');
+			$new_session_id = self::GetNewUID($cfulldomain.$cuseragent.$cremoteaddress,'sha256');
 			$dbg_data .= self::ConfigAndStartSession($absolute_path,$cdomain,$session_timeout,$new_session_id,$log_file);
 			$_SESSION['X_SCAT'] = time();
 			$_SESSION['SESSION_ID'] = session_id();
 			$dbg_data .= 'Session ID (new): '.session_id()."\n";
-		}//if(!isset($_SESSION['X_SEXT']) || !isset($_SESSION['X_SKEY']) || ($_SESSION['X_SEXT']+self::$session_timeout)<time() || $_SESSION['X_SKEY']!=AppSession::GetNewUID(self::$session_key.session_id(),'sha256',TRUE))
+		}//if(!isset($_SESSION['X_SEXT']) || !isset($_SESSION['X_SKEY']) || ($_SESSION['X_SEXT']+self::$session_timeout)<time() || $_SESSION['X_SKEY']!=self::GetNewUID(self::$session_key.session_id(),'sha256',TRUE))
 		set_time_limit(AppConfig::request_time_limit());
-		$_SESSION['X_SKEY'] = AppSession::GetNewUID($session_key.session_id(),'sha256',TRUE);
+		$_SESSION['X_SKEY'] = self::GetNewUID($session_key.session_id(),'sha256',TRUE);
 		$dbg_data .= 'Do not keep alive: '.($do_not_keep_alive!==TRUE && $do_not_keep_alive!==1 ? 'FALSE' : 'TRUE')."\n";
 		if($do_not_keep_alive!==TRUE && $do_not_keep_alive!==1) { $_SESSION['X_SEXT'] = time(); }
 		// vprint($dbg_data);
