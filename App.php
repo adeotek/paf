@@ -172,13 +172,16 @@ class App implements IApp {
 	 * @static
 	 */
 	public static function GetInstance($ajax = FALSE,$params = [],$session_init = TRUE,$do_not_keep_alive = NULL,$shell = FALSE) {
-		if($session_init && !AppSession::GetState()) {
+		if($session_init) {
+			AppSession::SetWithSession(TRUE);
 			$cdir = AppUrl::ExtractUrlPath((is_array($params) && array_key_exists('startup_path',$params) ? $params['startup_path'] : NULL));
 			AppSession::SessionStart($cdir,$do_not_keep_alive,$ajax);
-		}//if($session_init && !AppSession::GetState())
+		} else {
+			AppSession::SetWithSession(FALSE);
+		}//if($session_init)
 		if(is_null(self::$_app_instance)) {
 			$class_name = get_called_class();
-			self::$_app_instance = new $class_name($ajax,$params,$session_init,$do_not_keep_alive,$shell);
+			self::$_app_instance = new $class_name($ajax,$params,$do_not_keep_alive,$shell);
 		}//if(is_null(self::$_app_instance))
 		return self::$_app_instance;
 	}//END public static function GetInstance
@@ -209,14 +212,13 @@ class App implements IApp {
 	 * @param  bool  $ajax Optional flag indicating whether is an ajax request or not
 	 * @param  array $params An optional key-value array containing to be assigned to non-static properties
 	 * (key represents name of the property and value the value to be assigned)
-	 * @param  bool  $with_session Start PHP session (default FALSE)
 	 * @param  bool  $do_not_keep_alive Do not keep alive user session
 	 * @param  bool  $shell Shell mode on/off
 	 * @throws \Exception|\ReflectionException
 	 * @return void
 	 * @access protected
 	 */
-	protected function __construct($ajax = FALSE,$params = [],$with_session = FALSE,$do_not_keep_alive = NULL,$shell = FALSE) {
+	protected function __construct($ajax = FALSE,$params = [],$do_not_keep_alive = NULL,$shell = FALSE) {
 		$this->app_absolute_path = _AAPP_ROOT_PATH;
 		$this->app_path = _AAPP_ROOT_PATH._AAPP_APPLICATION_PATH;
 		$this->app_public_path = _AAPP_ROOT_PATH._AAP_PUBLIC_ROOT_PATH._AAP_PUBLIC_PATH;
@@ -235,7 +237,7 @@ class App implements IApp {
 			$this->url = new AppUrl($app_domain,$app_web_protocol,$url_folder);
 			$this->app_web_link = $this->url->GetWebLink();
 		} else {
-			$this->_app_state = $with_session ? AppSession::GetState() : TRUE;
+			$this->_app_state = AppSession::WithSession() ? AppSession::GetState() : TRUE;
 			$app_web_protocol = (isset($_SERVER["HTTPS"]) ? 'https' : 'http').'://';
 			$app_domain = strtolower((array_key_exists('HTTP_HOST',$_SERVER) && $_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'localhost');
 			$url_folder = AppUrl::ExtractUrlPath((is_array($params) && array_key_exists('startup_path',$params) ? $params['startup_path'] : NULL));
@@ -244,7 +246,7 @@ class App implements IApp {
 			if(AppConfig::split_session_by_page()) {
 				$this->phash = get_array_param($_GET,'phash',get_array_param($_POST,'phash',NULL,'is_notempty_string'),'is_notempty_string');
 				if(!$this->phash) {
-					$this->phash = is_array($_COOKIE) && array_key_exists('__x_pHash_',$_COOKIE) && strlen($_COOKIE['__x_pHash_']) && strlen($_COOKIE['__x_pHash_'])>12 ? substr($_COOKIE['__x_pHash_'],0,-12) : NULL;
+					$this->phash = is_array($_COOKIE) && array_key_exists('__aapp_pHash_',$_COOKIE) && strlen($_COOKIE['__aapp_pHash_']) && strlen($_COOKIE['__aapp_pHash_'])>15 ? substr($_COOKIE['__aapp_pHash_'],0,-15) : NULL;
 				}//if(!$this->phash)
 				if(!$this->phash ) { $this->phash = AppSession::GetNewUID(); }
 			}//if(AppConfig::split_session_by_page())
@@ -344,15 +346,62 @@ class App implements IApp {
 	 * @access public
 	 */
 	public function SessionCommit($clear = FALSE,$preserve_output_buffer = FALSE,$show_errors = TRUE,$key = NULL,$phash = NULL,$reload = TRUE) {
-		if(!AppSession::GetState()) {
+		if(!AppSession::WithSession()) {
 			if($show_errors && method_exists('\ErrorHandler','ShowErrors')) { \ErrorHandler::ShowErrors(); }
 			if($preserve_output_buffer!==TRUE) { $this->FlushOutputBuffer(); }
 			return;
-		}//if(!AppSession::GetState())
-		$lphash = isset($phash) ? $phash : $this->phash;
-		AppSession::SessionCommit($clear,$show_errors,$key,$lphash,$reload);
+		}//if(!AppSession::WithSession())
+		AppSession::SessionCommit($clear,$show_errors,$key,$phash,$reload);
 		if($preserve_output_buffer!==TRUE) { $this->FlushOutputBuffer(); }
 	}//END public function SessionCommit
+	/**
+	 * Get a global parameter (a parameter from first level of the array) from the session data array
+	 *
+	 * @param  string $key The key of the searched parameter
+	 * @param  string $phash The page hash (default NULL)
+	 * If FALSE is passed, the main (App property) page hash will not be used
+	 * @param  string $path An array containing the succession of keys for the searched parameter
+	 * @param  mixed  @keys_case Custom session keys case: CASE_LOWER/CASE_UPPER,
+	 * FALSE - do not change case, NULL - use the configuration value
+	 * @return mixed Returns the parameter value or NULL
+	 * @access public
+	 */
+	public function GetGlobalParam($key,$phash = NULL,$path = NULL,$keys_case = NULL) {
+		$lphash = isset($phash) ? $phash : $this->phash;
+		return AppSession::GetGlobalParam($key,$lphash,$path,$keys_case);
+	}//END public function GetGlobalParam
+	/**
+	 * Set a global parameter (a parameter from first level of the array) from the session data array
+	 *
+	 * @param  string $key The key of the searched parameter
+	 * @param  mixed  $val The value to be set
+	 * @param  string $phash The page hash (default NULL)
+	 * If FALSE is passed, the main (App property) page hash will not be used
+	 * @param  string $path An array containing the succession of keys for the searched parameter
+	 * @param  mixed  @keys_case Custom session keys case: CASE_LOWER/CASE_UPPER,
+	 * FALSE - do not change case, NULL - use the configuration value
+	 * @return bool Returns TRUE on success or FALSE otherwise
+	 * @access public
+	 */
+	public function SetGlobalParam($key,$val,$phash = NULL,$path = NULL,$keys_case = NULL) {
+		$lphash = isset($phash) ? $phash : $this->phash;
+		return AppSession::SetGlobalParam($key,$val,$lphash,$path,$keys_case);
+	}//END public function SetGlobalParam
+	/**
+	 * Delete a global parameter (a parameter from first level of the array) from the session data array
+	 *
+	 * @param  string $key The key of the searched parameter
+	 * @param  string $phash The page hash (default NULL)
+	 * If FALSE is passed, the main (App property) page hash will not be used
+	 * @param  null   $path
+	 * @param  null   $keys_case
+	 * @return bool
+	 * @access public
+	 */
+	public function UnsetGlobalParam($key,$phash = NULL,$path = NULL,$keys_case = NULL) {
+		$lphash = isset($phash) ? $phash : $this->phash;
+		return AppSession::UnsetGlobalParam($key,$lphash,$path,$keys_case);
+	}//END public function UnsetGlobalParam
 	/**
 	 * Initialize ARequest object
 	 *
@@ -363,7 +412,7 @@ class App implements IApp {
 	 * @return bool
 	 * @access public
 	 */
-	public function ARequestInit($post_params = array(),$subsession = NULL,$js_init = TRUE,$with_output = TRUE) {
+	public function ARequestInit($post_params = [],$subsession = NULL,$js_init = TRUE,$with_output = TRUE) {
 		if(!is_object($this->arequest)) {
 			$this->arequest = new AjaxRequest($this,$subsession);
 			$this->arequest->SetPostParams($post_params);
@@ -379,7 +428,7 @@ class App implements IApp {
 	 * @return void
 	 * @access public
 	 */
-	public function ExecuteARequest($post_params = array(),$subsession = NULL) {
+	public function ExecuteARequest($post_params = [],$subsession = NULL) {
 		$errors = '';
 		$request = array_key_exists('req',$_POST) ? $_POST['req'] : NULL;
 		if(!$request) { $errors .= 'Empty Request!'; }

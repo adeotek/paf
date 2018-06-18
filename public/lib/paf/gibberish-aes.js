@@ -1,5 +1,5 @@
 /**
-* @license Gibberish-AES 
+* @license Gibberish-AES
 * A lightweight Javascript Libray for OpenSSL compatible AES CBC encryption.
 *
 * Author: Mark Percival
@@ -18,10 +18,9 @@
 * Outputs: AES Encrypted text encoded in Base64
 */
 
-
 (function (root, factory) {
     if (typeof exports === 'object') {
-        // Node. 
+        // Node.
         module.exports = factory();
     } else if (typeof define === 'function' && define.amd) {
         // AMD. Register as an anonymous module.
@@ -226,7 +225,7 @@
             string += block2s(plainBlocks[i]);
         }
         string += block2s(plainBlocks[i], true);
-        return binary ? string : dec_utf8(string); 
+        return binary ? string : dec_utf8(string);
     },
 
     encryptBlock = function(block, words) {
@@ -301,7 +300,7 @@
                 t[3+c*4] = GBX[state[c*4]] ^ GDX[state[1+c*4]] ^ G9X[state[2+c*4]] ^ GEX[state[3+c*4]];
             }
         }
-        
+
         return t;
     },
 
@@ -647,7 +646,7 @@
         string = rawDecrypt(cryptArr, key, iv, binary);
         return string;
     },
-    
+
     MD5 = function(numArr) {
 
         function rotateLeft(lValue, iShiftBits) {
@@ -917,7 +916,7 @@
         // Takes a Nx16x1 byte array and converts it to Base64
         var _chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/',
         chars = _chars.split(''),
-        
+
         encode = function(b, withBreaks) {
             var flatArr = [],
             b64 = '',
@@ -948,7 +947,7 @@
             }
             return broken_b64;
         },
-        
+
         decode = function(string) {
             string = string.replace(/\n/g, '');
             var flatArr = [],
@@ -969,12 +968,12 @@
             flatArr = flatArr.slice(0, flatArr.length - (flatArr.length % 16));
             return flatArr;
         };
-        
+
         //internet explorer
         if(typeof Array.indexOf === "function") {
             _chars = chars;
         }
-        
+
         /*
         //other way to solve internet explorer problem
         if(!Array.indexOf){
@@ -988,8 +987,8 @@
             }
         }
         */
-        
-        
+
+
         return {
             "encode": encode,
             "decode": decode

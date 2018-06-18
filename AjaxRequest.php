@@ -21,11 +21,11 @@ namespace PAF;
  * @access   public
  */
 class AjaxRequest {
-	// /**
-	//  * @var    \PAF\IApp Reference to the App object (for interacting with session data)
-	//  * @access protected
-	//  */
-	// protected $app = NULL;
+	/**
+	 * @var    \PAF\IApp Reference to the App object (for interacting with session data)
+	 * @access protected
+	 */
+	protected $app = NULL;
 	/**
 	 * @var    string Session sub-array key for storing ARequest data
 	 * @access protected
@@ -174,17 +174,17 @@ class AjaxRequest {
 	public function JsInit($with_output = TRUE) {
 		$js = '<script type="text/javascript">'."\n";
 		$js .= "\t".'var AAPP_PHASH="'.$this->app->phash.'";'."\n";
-		$js .= "\t".'var AAPP_TARGET="'.$this->app->app_web_link.'/'.self::$aapp_target.'";'."\n";
+		$js .= "\t".'var AAPP_TARGET="'.$this->app->app_web_link.'/'.AppConfig::app_ajax_target().'";'."\n";
 		$js .= "\t".'var AAPP_UID="'.$this->app_req_key.'";'."\n";
-		$js .= "\t".'var AAPP_JS_PATH="'.$this->app->app_web_link.self::$aapp_js_path.'";'."\n";
+		$js .= "\t".'var AAPP_JS_PATH="'.$this->app->app_web_link.AppConfig::app_js_path().'";'."\n";
 		$js .= '</script>'."\n";
-		$js .= '<script type="text/javascript" src="'.$this->app->app_web_link.self::$aapp_js_path.'/gibberish-aes.min.js?v=1411031"></script>'."\n";
-		$js .= '<script type="text/javascript" src="'.$this->app->app_web_link.self::$aapp_js_path.'/arequest.min.js?v=1804291"></script>'."\n";
+		$js .= '<script type="text/javascript" src="'.$this->app->app_web_link.AppConfig::app_js_path().'/gibberish-aes.min.js?v=1411031"></script>'."\n";
+		$js .= '<script type="text/javascript" src="'.$this->app->app_web_link.AppConfig::app_js_path().'/arequest.min.js?v=1804291"></script>'."\n";
 		if(is_object($this->app->debugger)) {
 			$dbg_scripts = $this->app->debugger->GetScripts();
 			if(is_array($dbg_scripts) && count($dbg_scripts)) {
 				foreach($dbg_scripts as $dsk=>$ds) {
-					$js .= '<script type="text/javascript" src="'.$this->app->app_web_link.self::$aapp_js_path.'/debug'.$ds.'?v=1712011"></script>'."\n";
+					$js .= '<script type="text/javascript" src="'.$this->app->app_web_link.AppConfig::app_js_path().'/debug'.$ds.'?v=1712011"></script>'."\n";
 				}//END foreach
 			}//if(is_array($dbg_scripts) && count($dbg_scripts))
 		}//if(is_object($this->app->debugger))
@@ -332,7 +332,7 @@ class AjaxRequest {
 					AppSession::SetGlobalParam(AppSession::ConvertToSessionCase($request_id,self::$session_keys_case),$req_sess_params,FALSE,$subsession,FALSE);
 					$session_id = rawurlencode(\GibberishAES::enc(session_id(),AppConfig::app_session_key()));
 					$postparams = $this->PreparePostParams($post_params);
-					$args_separators = array($this->app_params_sep,$this->app_arr_params_sep,$this->app_arr_key_sep);
+					$args_separators = [$this->app_params_sep,$this->app_arr_params_sep,$this->app_arr_key_sep];
 					$phash = AppConfig::app_use_window_name() ? "'+ARequest.get(window.name)+'".self::$app_arg_sep : '';
 					$jsarguments = $app_params_encrypt ? \GibberishAES::enc($phash.$this->ParseArguments($args,$args_separators),$request_id) : $phash.$this->ParseArguments($args,$args_separators);
 					$pconfirm = $this->PrepareConfirm($confirm,$request_id);

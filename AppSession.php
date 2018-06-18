@@ -22,6 +22,12 @@ namespace PAF;
  */
 class AppSession {
 	/**
+	 * @var    bool Use PHP session for current request
+	 * @access protected
+	 * @static
+	 */
+	protected static $with_session = NULL;
+	/**
 	 * @var    bool Flag for state of the session (started or not)
 	 * @access protected
 	 * @static
@@ -61,6 +67,56 @@ class AppSession {
 		if($notime) { return hash($algorithm,$salt,$raw); }
 		return hash($algorithm,(strlen($salt) ? $salt : '').uniqid(microtime().rand(),TRUE),$raw);
 	}//END public static function GetNewUID
+	/**
+	 * Get with session flag
+	 *
+	 * @return bool
+	 */
+	public static function WithSession(): bool {
+		return self::$with_session;
+	}//END public static function WithSession
+	/**
+	 * Set with session flag
+	 *
+	 * @param bool $value
+	 */
+	public static function SetWithSession(bool $value): void {
+		self::$with_session = $value;
+	}//END public static function SetWithSession
+	/**
+	 * Get session data
+	 *
+	 * @return array
+	 */
+	public static function GetData(): array {
+		return self::$data??[];
+	}//END public static function GetData
+	/**
+	 * Set session data
+	 *
+	 * @param array $data
+	 */
+	public static function SetData(array $data): void {
+		self::$data = $data;
+	}//END public static function SetData
+	/**
+	 * Gets the session state befor current request (TRUE for existing session or FALSE for newly initialized)
+	 *
+	 * @return bool Session state (TRUE for existing session or FALSE for newly initialized)
+	 * @access public
+	 */
+	public static function GetState() {
+		return (self::$with_session && is_array(self::$data));
+	}//END public static function GetState
+	/**
+	 * Set clear session flag (on commit session will be cleared)
+	 *
+	 * @return void
+	 * @access public
+	 */
+	public static function MarkForDeletion() {
+		self::$marked_for_deletion = TRUE;
+	}//END public static function MarkForDeletion
 	/**
 	 * Convert a string to the session keys case (set in configuration)
 	 *
@@ -234,6 +290,7 @@ class AppSession {
 	 * @static
 	 */
 	public static function SessionStart(string $path = '',?bool $do_not_keep_alive = NULL,$ajax = FALSE) {
+		if(!self::$with_session) { return; }
 		$dbg_data = '>> '.(isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : 'console')."\n";
 		$dbg_data .= 'Session started: '.(self::$session_started ? 'TRUE' : 'FALSE')."\n";
 		$absolute_path = _AAPP_ROOT_PATH._AAPP_APPLICATION_PATH;
@@ -276,6 +333,88 @@ class AppSession {
 		if(AppConfig::async_session() && $ajax) { AppSession::SessionClose(); }
     }//END public static function SessionStart
 	/**
+	 * Commit the temporary session into the session
+	 *
+	 * @param  bool   $clear If TRUE is passed the session will be cleared
+	 * @param  bool   $show_errors Display errors TRUE/FALSE
+	 * @param  string $key Session key to commit (do partial commit)
+	 * @param  string $phash Page (tab) hash
+	 * @param  bool   $reload Reload session data after commit
+	 * @return void
+	 * @poaram bool $reload Reload session after commit (default TRUE)
+	 * @access public
+	 * @static
+	 */
+	public static function SessionCommit($clear = FALSE,$show_errors = TRUE,$key = NULL,$phash = NULL,$reload = TRUE) {
+		if(!self::$with_session) {
+			if($show_errors && method_exists('\ErrorHandler','ShowErrors')) { \ErrorHandler::ShowErrors(); }
+			return;
+		}//if(!self::$with_session)
+		if(!is_array(self::$data)) { self::$data = []; }
+		if(!self::$session_started) { session_start(); }
+		if($clear===TRUE || self::$marked_for_deletion===TRUE) {
+			if(strlen($key)) {
+				if(strlen($phash)) {
+					unset(self::$initial_data[$key][$phash]);
+					unset(self::$data[$key][$phash]);
+					unset($_SESSION[$key][$phash]);
+				} else {
+					unset(self::$initial_data[$key]);
+					unset(self::$data[$key]);
+					unset($_SESSION[$key]);
+				}//if(strlen($phash))
+			} else {
+				if(strlen($phash)) {
+					unset(self::$initial_data[$phash]);
+					unset(self::$data[$phash]);
+					unset($_SESSION[$phash]);
+				} else {
+					self::$initial_data = NULL;
+					self::$data = NULL;
+					unset($_SESSION);
+				}//if(strlen($phash))
+			}//if(strlen($key))
+		} else {
+			if(strlen($key)) {
+				if(strlen($phash)) {
+					$lvalue = (array_key_exists($key,self::$data) && is_array(self::$data[$key]) && array_key_exists($phash,self::$data[$key])) ? self::$data[$key][$phash] : NULL;
+					$li_arr = (array_key_exists($key,self::$initial_data) && is_array(self::$initial_data[$key]) && array_key_exists($phash,self::$initial_data[$key])) ? self::$initial_data[$key][$phash] : NULL;
+					if(array_key_exists($key,$_SESSION) && is_array($_SESSION[$key]) && array_key_exists($phash,$_SESSION[$key])) {
+						$_SESSION[$key][$phash] = custom_array_merge($_SESSION[$key][$phash],$lvalue,TRUE,$li_arr);
+					} else {
+						$_SESSION[$key][$phash] = $lvalue;
+					}//if(array_key_exists($key,$_SESSION) && is_array($_SESSION[$key]) && array_key_exists($phash,$_SESSION[$key]))
+				} else {
+					$lvalue = array_key_exists($key,self::$data) ? self::$data[$key] : NULL;
+					$li_arr = array_key_exists($key,self::$initial_data) ? self::$initial_data[$key] : NULL;
+					if(array_key_exists($key,$_SESSION)) {
+						$_SESSION[$key] = custom_array_merge($_SESSION[$key],$lvalue,TRUE,$li_arr);
+					} else {
+						$_SESSION[$key] = $lvalue;
+					}//if(array_key_exists($key,$_SESSION))
+				}//if(strlen($phash))
+			} else {
+				if(strlen($phash)) {
+					$lvalue = array_key_exists($phash,self::$data) ? self::$data[$phash] : NULL;
+					$li_arr = is_array(self::$initial_data) && array_key_exists($phash,self::$initial_data) ? self::$initial_data[$phash] : NULL;
+					if(array_key_exists($phash,$_SESSION)) {
+						$_SESSION[$phash] = custom_array_merge($_SESSION[$phash],$lvalue,TRUE,$li_arr);
+					} else {
+						$_SESSION[$phash] = $lvalue;
+					}//if(array_key_exists($phash,$_SESSION))
+				} else {
+					$_SESSION = custom_array_merge($_SESSION,self::$data,TRUE,self::$initial_data);
+				}//if(strlen($phash))
+			}//if(strlen($key))
+			if($reload) {
+				self::$data = $_SESSION;
+				self::$initial_data = self::$data;
+			}//if($reload)
+		}//($clear===TRUE || $this->clear_session===TRUE)
+		if(!self::$session_started) { session_write_close(); }
+		if($show_errors && method_exists('\ErrorHandler','ShowErrors')) { \ErrorHandler::ShowErrors(); }
+	}//END public static function SessionCommit
+	/**
 	 * Close session for write
 	 *
 	 * @param bool $write
@@ -292,22 +431,6 @@ class AppSession {
 		}//if($write)
 		self::$session_started = FALSE;
 	}//END public static function SessionClose
-	/**
-	 * Get session data
-	 *
-	 * @return array
-	 */
-	public static function GetData(): array {
-		return self::$data;
-	}//END public static function GetData
-	/**
-	 * Set session data
-	 *
-	 * @param array $data
-	 */
-	public static function SetData(array $data): void {
-		self::$data = $data;
-	}//END public static function SetData
 	/**
 	 * Gets a session parameter at a certain path (path = a succession of keys of the session data array)
 	 *
@@ -446,105 +569,5 @@ class AppSession {
 		}//if($lphash)
 		return TRUE;
 	}//END public static function UnsetGlobalParam
-	/**
-	 * Commit the temporary session into the session
-	 *
-	 * @param  bool   $clear If TRUE is passed the session will be cleared
-	 * @param  bool   $show_errors Display errors TRUE/FALSE
-	 * @param  string $key Session key to commit (do partial commit)
-	 * @param  string $phash Page (tab) hash
-	 * @param  bool   $reload Reload session data after commit
-	 * @return void
-	 * @poaram bool $reload Reload session after commit (default TRUE)
-	 * @access public
-	 * @static
-	 */
-	public static function SessionCommit($clear = FALSE,$show_errors = TRUE,$key = NULL,$phash = NULL,$reload = TRUE) {
-		if(!self::$session_started) {
-			if($show_errors && method_exists('\ErrorHandler','ShowErrors')) { \ErrorHandler::ShowErrors(); }
-			return;
-		}//if(!self::$session_started)
-		if(!is_array(self::$data)) { self::$data = []; }
-		if(!self::$session_started) { session_start(); }
-		if($clear===TRUE || self::$marked_for_deletion===TRUE) {
-			if(strlen($key)) {
-				if(strlen($phash)) {
-					unset(self::$initial_data[$key][$phash]);
-					unset(self::$data[$key][$phash]);
-					unset($_SESSION[$key][$phash]);
-				} else {
-					unset(self::$initial_data[$key]);
-					unset(self::$data[$key]);
-					unset($_SESSION[$key]);
-				}//if(strlen($phash))
-			} else {
-				if(strlen($phash)) {
-					unset(self::$initial_data[$phash]);
-					unset(self::$data[$phash]);
-					unset($_SESSION[$phash]);
-				} else {
-					self::$initial_data = NULL;
-					self::$data = NULL;
-					unset($_SESSION);
-				}//if(strlen($phash))
-			}//if(strlen($key))
-		} else {
-			if(strlen($key)) {
-				if(strlen($phash)) {
-					$lvalue = (array_key_exists($key,self::$data) && is_array(self::$data[$key]) && array_key_exists($phash,self::$data[$key])) ? self::$data[$key][$phash] : NULL;
-					$li_arr = (array_key_exists($key,self::$initial_data) && is_array(self::$initial_data[$key]) && array_key_exists($phash,self::$initial_data[$key])) ? self::$initial_data[$key][$phash] : NULL;
-					if(array_key_exists($key,$_SESSION) && is_array($_SESSION[$key]) && array_key_exists($phash,$_SESSION[$key])) {
-						$_SESSION[$key][$phash] = custom_array_merge($_SESSION[$key][$phash],$lvalue,TRUE,$li_arr);
-					} else {
-						$_SESSION[$key][$phash] = $lvalue;
-					}//if(array_key_exists($key,$_SESSION) && is_array($_SESSION[$key]) && array_key_exists($phash,$_SESSION[$key]))
-				} else {
-					$lvalue = array_key_exists($key,self::$data) ? self::$data[$key] : NULL;
-					$li_arr = array_key_exists($key,self::$initial_data) ? self::$initial_data[$key] : NULL;
-					if(array_key_exists($key,$_SESSION)) {
-						$_SESSION[$key] = custom_array_merge($_SESSION[$key],$lvalue,TRUE,$li_arr);
-					} else {
-						$_SESSION[$key] = $lvalue;
-					}//if(array_key_exists($key,$_SESSION))
-				}//if(strlen($phash))
-			} else {
-				if(strlen($phash)) {
-					$lvalue = array_key_exists($phash,self::$data) ? self::$data[$phash] : NULL;
-					$li_arr = is_array(self::$initial_data) && array_key_exists($phash,self::$initial_data) ? self::$initial_data[$phash] : NULL;
-					if(array_key_exists($phash,$_SESSION)) {
-						$_SESSION[$phash] = custom_array_merge($_SESSION[$phash],$lvalue,TRUE,$li_arr);
-					} else {
-						$_SESSION[$phash] = $lvalue;
-					}//if(array_key_exists($phash,$_SESSION))
-				} else {
-					$_SESSION = custom_array_merge($_SESSION,self::$data,TRUE,self::$initial_data);
-				}//if(strlen($phash))
-			}//if(strlen($key))
-			if($reload) {
-				self::$data = $_SESSION;
-				self::$initial_data = self::$data;
-			}//if($reload)
-		}//($clear===TRUE || $this->clear_session===TRUE)
-		if(!self::$session_started) { session_write_close(); }
-		if($show_errors && method_exists('\ErrorHandler','ShowErrors')) { \ErrorHandler::ShowErrors(); }
-	}//END public static function SessionCommit
-	/**
-	 * Gets the session state befor current request (TRUE for existing session or FALSE for newly initialized)
-	 *
-	 * @return bool Session state (TRUE for existing session or FALSE for newly initialized)
-	 * @access public
-	 */
-	public static function GetState() {
-		return self::$session_started;
-	}//END public static function GetState
-	/**
-	 * Set clear session flag (on commit session will be cleared)
-	 *
-	 * @return void
-	 * @access public
-	 */
-	public static function MarkForDeletion() {
-		self::$marked_for_deletion = TRUE;
-	}//END public static function MarkForDeletion
 }//END class AppSession
 ?>
