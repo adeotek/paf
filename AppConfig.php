@@ -69,8 +69,8 @@ class AppConfig {
 		if(is_array($arguments) && count($arguments)) {
 			// is setter
 			if($access!='public') { throw new \InvalidArgumentException("Inaccessible property [{$name}]!"); }
-			if(strlen($validation) && !validate_param($arguments[1],NULL,$validation,TRUE)) { throw new \InvalidArgumentException("Invalid value for property [{$name}]!"); }
-			self::$data[$name] = $arguments[1];
+			if(strlen($validation) && !validate_param($arguments[0],NULL,$validation,TRUE)) { throw new \InvalidArgumentException("Invalid value for property [{$name}]!"); }
+			self::$data[$name] = $arguments[0];
 		} else {
 			if($access=='private') { throw new \InvalidArgumentException("Inaccessible property [{$name}]!"); }
 			// is getter

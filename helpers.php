@@ -715,10 +715,9 @@
 		if(!strlen($string)) { return $string; }
 		if($namespaced) {
 			$str_arr = explode('-',$string);
-			$main = array_pop($str_arr);
-			$prefix = implode('\\',$str_arr);
-			$result = custom_ucfirst($main,TRUE,TRUE,'_',TRUE);
-			$result = (strlen($prefix) ? $prefix.'\\' : '').($lower_first ? lcfirst($result) : $result);
+			$result = implode('\\',array_map(function($str){
+				return custom_ucfirst($str,TRUE,TRUE,'_',TRUE);
+			},$str_arr));
 		} else {
 		$result = custom_ucfirst($string,TRUE,TRUE,'_',TRUE);
 			if($lower_first) { $result = lcfirst($result); }

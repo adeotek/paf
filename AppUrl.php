@@ -373,7 +373,7 @@ class AppUrl {
 		}//END switch
 	}//END public function GetBase
 	/**
-	 * description
+	 * Create new application URL
 	 *
 	 * @param object|null $params Parameters object (instance of [Params])
 	 * @param int         $url_format
