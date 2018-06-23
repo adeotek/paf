@@ -110,8 +110,6 @@ class AppUrl {
 		} else {
 			$this->url_base = $this->app_web_protocol.$this->app_domain;
 		}//if(isset($_SERVER['REQUEST_URI']))
-		$uri_len = isset($_SERVER['REQUEST_URI']) ? (strpos($_SERVER['REQUEST_URI'],'?')!==FALSE ? strpos($_SERVER['REQUEST_URI'],'?') : (strpos($_SERVER['REQUEST_URI'],'#')!==FALSE ? strpos($_SERVER['REQUEST_URI'],'#') : strlen($_SERVER['REQUEST_URI']))) : 0;
-		$this->url_base = $this->app_web_protocol.$this->app_domain.substr($_SERVER['REQUEST_URI'],0,$uri_len);
 		$this->data = is_array($_GET) ? $this->SetParams($_GET) : [];
 	}//END public function __construct
 	/**
