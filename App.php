@@ -8,14 +8,29 @@
  * @author     George Benjamin-Schonberger
  * @copyright  Copyright (c) 2012 - 2018 AdeoTEK
  * @license    LICENSE.md
- * @version    2.1.0
+ * @version    2.1.2
  * @filesource
  */
 namespace PAF;
- 	define('URL_FORMAT_FRIENDLY_ORIGINAL',-1);
- 	define('URL_FORMAT_URI_ONLY',0);
+	/**
+	 * URL format: friendly (original)
+	 */
+	define('URL_FORMAT_FRIENDLY_ORIGINAL',-1);
+	/**
+	 * URL format: URI only
+	 */
+	define('URL_FORMAT_URI_ONLY',0);
+	/**
+	 * URL format: friendly
+	 */
 	define('URL_FORMAT_FRIENDLY',1);
+	/**
+	 * URL format: full
+	 */
 	define('URL_FORMAT_FULL',2);
+	/**
+	 * URL format: short
+	 */
 	define('URL_FORMAT_SHORT',3);
 /**
  * PAF main class.
@@ -25,58 +40,31 @@ namespace PAF;
  * @package  AdeoTEK\PAF
  * @access   public
  */
-class App extends AppConfig {
+class App implements IApp {
 	/**
 	 * @var    Object Singleton unique instance
 	 * @access protected
 	 * @static
 	 */
-	protected static $_aapp_instance = NULL;
-	/**
-	 * @var        string The path included in the application URL
-	 * @access     protected
-	 * @static
-	 */
-	protected static $url_path = NULL;
-	/**
-	 * @var    array Session initial data
-	 * @access public
-	 */
-	protected static $initial_data = NULL;
-	/**
-	 * @var    bool Flag for state of the session (started or not)
-	 * @access protected
-	 * @static
-	 */
-	protected static $session_started = FALSE;
+	protected static $_app_instance = NULL;
 	/**
 	 * @var    bool Flag for output buffering (started or not)
 	 * @access protected
 	 * @static
 	 */
-	protected static $aapp_ob_started = FALSE;
-	/**
-	 * @var    array Session data
-	 * @access public
-	 */
-	public static $data = NULL;
+	protected static $app_ob_started = FALSE;
 	/**
 	 * @var    bool State of session before current request (TRUE for existing session or FALSE for newly initialized)
 	 * @access protected
 	 */
 	protected $_app_state = FALSE;
 	/**
-	 * @var    bool Flag for cleaning session data (if is set to TRUE, the session data will be erased on commit)
-	 * @access protected
-	 */
-	protected $clear_session = FALSE;
-	/**
 	 * @var    string Application absolute path (auto-set on constructor)
 	 * @access public
 	 */
 	protected $app_absolute_path = NULL;
 	/**
-	 * @var    PAFDebugger Object for debugging
+	 * @var    \PAF\Debugger Object for debugging
 	 * @access public
 	 */
 	public $debugger = NULL;
@@ -85,6 +73,11 @@ class App extends AppConfig {
 	 * @access public
 	 */
 	public $arequest = NULL;
+	/**
+	 * @var    \PAF\AppUrl Object for application URL processing
+	 * @access public
+	 */
+	public $url = NULL;
 	/**
 	 * @var    string Application non-public path (auto-set on constructor)
 	 * @access public
@@ -101,26 +94,6 @@ class App extends AppConfig {
 	 */
 	public $app_web_link = NULL;
 	/**
-	 * @var    string Application web protocol (http/https)
-	 * @access public
-	 */
-	public $app_web_protocol = NULL;
-	/**
-	 * @var    string Application domain (auto-set on constructor)
-	 * @access public
-	 */
-	public $app_domain = NULL;
-	/**
-	 * @var    string Application folder inside www root (auto-set on constructor)
-	 * @access public
-	 */
-	public $url_folder = NULL;
-	/**
-	 * @var    bool Flag indicating if the session was started for the current request
-	 * @access public
-	 */
-	public $with_session = NULL;
-	/**
 	 * @var    bool Flag to indicate if the request is ajax or not
 	 * @access public
 	 */
@@ -136,26 +109,6 @@ class App extends AppConfig {
 	 */
 	public $phash = NULL;
 	/**
-	 * @var    string Application base url: domain + path + url id (auto-set on constructor)
-	 * @access public
-	 */
-	public $url_base = NULL;
-	/**
-	 * @var    array GET (URL) data
-	 * @access public
-	 */
-	public $url_data = array();
-	/**
-	 * @var    array GET (URL) special parameters list
-	 * @access public
-	 */
-	public $special_url_params = array('language','urlid');
-	/**
-	 * @var    string URL virtual path
-	 * @access public
-	 */
-	public $url_virtual_path = NULL;
-	/**
 	 * Magic method for accessing non-static public members with static call
 	 *
 	 * If no arguments are provided, first tries to return the property with the given name
@@ -170,25 +123,25 @@ class App extends AppConfig {
 	 */
 	public static function __callStatic($name,$arguments) {
 		$class = get_called_class();
-		if(!is_object(self::$_aapp_instance)) { throw new \PAF\AppException("Invalid class [{$class}] instance",E_ERROR); }
-		// self::$_aapp_instance->Dlog($name,'__callStatic:name');
-		// self::$_aapp_instance->Dlog($class,'__callStatic:class');
+		if(!is_object(self::$_app_instance)) { throw new AppException("Invalid class [{$class}] instance",E_ERROR); }
+		// self::$_app_instance->Dlog($name,'__callStatic:name');
+		// self::$_app_instance->Dlog($class,'__callStatic:class');
 		$reflector = new \ReflectionClass($class);
 		if(strpos($name,'_')!==0) {
 			$member = $name;
-			// self::$_aapp_instance->Dlog($member,'__callStatic:property');
+			// self::$_app_instance->Dlog($member,'__callStatic:property');
 			if($reflector->hasProperty($member)) {
 				$property = $reflector->getProperty($member);
-				if(!$property->isStatic() && $property->isPublic()) { return self::$_aapp_instance->{$member}; }
+				if(!$property->isStatic() && $property->isPublic()) { return self::$_app_instance->{$member}; }
 			}//if($reflector->hasProperty($member))
 		} else {
 			$member = substr($name,1);
-			// self::$_aapp_instance->Dlog($member,'__callStatic:method');
+			// self::$_app_instance->Dlog($member,'__callStatic:method');
 			if($reflector->hasMethod($member)) {
 				$method = $reflector->getMethod($member);
 				if(!$method->isStatic() && $method->isPublic()) {
-					// self::$_aapp_instance->Dlog($arguments,'__callStatic:arguments');
-					if(preg_match('/^[DWEI]log$/i',$member) && (self::$console_show_file===TRUE || (isset($arguments[2]) && $arguments[2]===TRUE))) {
+					// self::$_app_instance->Dlog($arguments,'__callStatic:arguments');
+					if(preg_match('/^[DWEI]log$/i',$member) && (AppConfig::console_show_file()===TRUE || (isset($arguments[2]) && $arguments[2]===TRUE))) {
 						$dbg = debug_backtrace();
 						$caller = array_shift($dbg);
 						$cfile = isset($caller['file']) ? $caller['file'] : '';
@@ -196,72 +149,41 @@ class App extends AppConfig {
 						$larguments = array((isset($arguments[0]) ? $arguments[0] : NULL),$label);
 					} else {
 						$larguments = $arguments;
-					}//if(preg_match('/^[DWEI]log$/i',$member) && (self::$console_show_file===TRUE || (isset($arguments[2]) && $arguments[2]===TRUE)))
-					// self::$_aapp_instance->Dlog($larguments,'__callStatic:$larguments');
-					return call_user_func_array(array(self::$_aapp_instance,$member),$larguments);
+					}//if(preg_match('/^[DWEI]log$/i',$member) && (AppConfig::console_show_file()===TRUE || (isset($arguments[2]) && $arguments[2]===TRUE)))
+					// self::$_app_instance->Dlog($larguments,'__callStatic:$larguments');
+					return call_user_func_array(array(self::$_app_instance,$member),$larguments);
 				}//if(!$method->isStatic() && $method->isPublic())
 			}//if($reflector->hasMethod($member))
 		}//if(strpos($name,'_')!==0)
 		throw new \InvalidArgumentException("Undefined or inaccessible property/method [{$member}]!");
 	}//END public static function __callStatic
 	/**
-	 * Extracts the URL path of the application.
-	 *
-	 * @param      string $startup_path Entry point file absolute path
-	 * @return     string Returns the URL path of the application.
-	 * @access     protected
-	 * @static
-	 */
-	protected static function ExtractUrlPath($startup_path = NULL) {
-		if(strlen($startup_path)) {
-			self::$url_path = str_replace('\\','/',(str_replace(_AAPP_ROOT_PATH._AAP_PUBLIC_ROOT_PATH,'',$startup_path)));
-			self::$url_path = trim(str_replace(trim(self::$url_path,'/'),'',trim(dirname($_SERVER['SCRIPT_NAME']),'/')),'/');
-			self::$url_path = (strlen(self::$url_path) ? '/'.self::$url_path : '')._AAP_PUBLIC_PATH;
-		} else {
-			self::$url_path = '/'.trim(dirname($_SERVER['SCRIPT_NAME']),'/\\');
-		}//if(strlen($startup_path))
-		return rtrim(self::$url_path,'/');
-	}//END protected static function ExtractUrlPath
-	/**
-	 * Gets the base URL of the application.
-	 *
-	 * @param	   string $startup_path Startup absolute path
-	 * @return     string Returns the base URL of the application.
-	 * @access     public
-	 * @static
-	 */
-	public static function GetRootUrl($startup_path = NULL) {
-		$app_web_protocol = (isset($_SERVER["HTTPS"]) ? 'https' : 'http').'://';
-		$app_domain = strtolower((array_key_exists('HTTP_HOST',$_SERVER) && $_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'localhost');
-		$url_folder = self::ExtractUrlPath($startup_path);
-		return $app_web_protocol.$app_domain.$url_folder;
-	}//END public static function GetRootUrl
-	/**
 	 * Classic singleton method for retrieving the PAF object
 	 *
-	 * @param  bool $ajax Optional flag indicating whether is an ajax request or not
+	 * @param  bool  $ajax Optional flag indicating whether is an ajax request or not
 	 * @param  array $params An optional key-value array containing to be assigned to non-static properties
 	 * (key represents name of the property and value the value to be assigned)
-	 * @param  bool $session_init Flag indicating if session should be started or not
-	 * @param  bool $do_not_keep_alive Flag indicating if session should be kept alive by the current request
-	 * @param  bool $shell Shell mode on/off
-	 * @return \PAF\App Returns the PAF application instance
+	 * @param  bool  $session_init Flag indicating if session should be started or not
+	 * @param  bool  $do_not_keep_alive Flag indicating if session should be kept alive by the current request
+	 * @param  bool  $shell Shell mode on/off
+	 * @return \PAF\IApp Returns the PAF application instance
+	 * @throws \PAF\AppException
 	 * @access public
 	 * @static
 	 */
-	public static function GetInstance($ajax = FALSE,$params = array(),$session_init = TRUE,$do_not_keep_alive = NULL,$shell = FALSE) {
-		if($session_init && !self::$session_started) {
-			$cdir = self::ExtractUrlPath((is_array($params) && array_key_exists('startup_path',$params) ? $params['startup_path'] : NULL));
-			self::SessionStart($cdir,$do_not_keep_alive);
-			self::$data = $_SESSION;
-			self::$initial_data = self::$data;
-			if(self::$async_session && $ajax) { self::SessionClose(); }
-		}//if($session_init && !self::$session_started)
-		if(is_null(self::$_aapp_instance)) {
+	public static function GetInstance($ajax = FALSE,$params = [],$session_init = TRUE,$do_not_keep_alive = NULL,$shell = FALSE) {
+		if($session_init) {
+			AppSession::SetWithSession(TRUE);
+			$cdir = AppUrl::ExtractUrlPath((is_array($params) && array_key_exists('startup_path',$params) ? $params['startup_path'] : NULL));
+			AppSession::SessionStart($cdir,$do_not_keep_alive,$ajax);
+		} else {
+			AppSession::SetWithSession(FALSE);
+		}//if($session_init)
+		if(is_null(self::$_app_instance)) {
 			$class_name = get_called_class();
-			self::$_aapp_instance = new $class_name($ajax,$params,$session_init,$do_not_keep_alive,$shell);
-		}//if(is_null(self::$_aapp_instance))
-		return self::$_aapp_instance;
+			self::$_app_instance = new $class_name($ajax,$params,$do_not_keep_alive,$shell);
+		}//if(is_null(self::$_app_instance))
+		return self::$_app_instance;
 	}//END public static function GetInstance
 	/**
 	 * Method for returning the static instance property
@@ -271,7 +193,7 @@ class App extends AppConfig {
 	 * @static
 	 */
 	public static function GetCurrentInstance() {
-		return self::$_aapp_instance;
+		return self::$_app_instance;
 	}//END public static function GetCurrentInstance
 	/**
 	 * Static setter for phash property
@@ -282,271 +204,52 @@ class App extends AppConfig {
 	 * @static
 	 */
 	public static function SetPhash($value) {
-		self::$_aapp_instance->phash = $value;
+		self::$_app_instance->phash = $value;
 	}//END public static function SetPhash
-	/**
-	 * Convert a string to the session keys case (set in configuration)
-	 *
-	 * @param  string $input The string to be converted to the session case
-	 * @param  mixed  @keys_case Custom session keys case: CASE_LOWER/CASE_UPPER,
-	 * FALSE - do not change case, NULL - use the configuration value
-	 * @return string The value converted to the session case
-	 * @access public
-	 * @static
-	 */
-	public static function ConvertToSessionCase($input,$keys_case = NULL) {
-		if($keys_case===FALSE) { return $input; }
-		if(is_array($input)) {
-			$linput = array();
-			foreach($input as $k=>$v) { $linput[$k] = self::ConvertToSessionCase($v,$keys_case); }
-			return $linput;
-		}//if(is_array($input))
-		if(!is_string($input)) { return $input; }
-		switch(is_numeric($keys_case) ? $keys_case : self::$session_keys_case) {
-			case CASE_LOWER:
-				return strtolower($input);
-			case CASE_UPPER:
-				return strtoupper($input);
-			default:
-				return $input;
-		}//END switch
-	}//END public static function ConvertToSessionCase
-	/**
-	 * Set session configuration
-	 *
-	 * @param      $absolute_path
-	 * @param      $domain
-	 * @param null $session_id
-	 * @return string
-	 * @access public
-	 * @static
-	 * @throws \PAF\AppException
-	 */
-	public static function ConfigAndStartSession($absolute_path,$domain,$session_id = NULL) {
-		self::$session_started = FALSE;
-		if(class_exists('\ErrorHandler')) { \ErrorHandler::$silent_mode = TRUE; }
-		$errors = [];
-		$dbg_data = '';
-		ini_set('session.use_cookies',1);
-		ini_set('session.cookie_lifetime',0);
-		ini_set('session.cookie_domain',$domain);
-		ini_set('session.gc_maxlifetime',self::$session_timeout);
-		ini_set('session.cache_expire',self::$session_timeout/60);
-		if(self::$session_redis===TRUE) {
-			if(class_exists('Redis',FALSE)) {
-				try {
-					ini_set('session.save_handler','redis');
-					ini_set('session.save_path',self::$session_redis_server);
-					ini_set('session.cache_expire',intval(self::$session_timeout/60));
-					if(is_string(self::$x_session_name) && strlen(self::$x_session_name)) { session_name(self::$x_session_name); }
-					if(is_string($session_id) && strlen($session_id)) {
-						session_id($session_id);
-						$dbg_data .= 'Set new session id: '.$session_id."\n";
-					}//if(is_string($session_id) && strlen($session_id))
-					session_start();
-				} catch(\Exception $e) {
-					$errors[] = ['errstr'=>$e->getMessage(),'errno'=>$e->getCode(),'errfile'=>$e->getFile(),'errline'=>$e->getLine()];
-				} finally {
-					if(class_exists('\ErrorHandler') && \ErrorHandler::HasErrors()) {
-						$eh_errors = \ErrorHandler::GetErrors(TRUE);
-						$errors = array_merge($errors,$eh_errors);
-					}//if(class_exists('\ErrorHandler') && \ErrorHandler::HasErrors())
-					if(count($errors)>0) {
-						self::$session_started = FALSE;
-						self::Log2File(print_r($errors,1),$absolute_path.self::$logs_path.'/'.self::$errors_log_file);
-						$dbg_data .= 'Session start [handler: Redis] errors: '.print_r($errors,1)."\n";
-					} else {
-						self::$session_started = TRUE;
-						$dbg_data .= 'Session start done [handler: Redis]'."\n";
-					}//if(count($errors)>0)
-				}//try
-			}//if(class_exists('Redis',FALSE))
-		}//if(self::$session_redis===TRUE)
-		if(!self::$session_started && self::$session_memcached===TRUE) {
-			$errors = [];
-			if(class_exists('Memcached',FALSE)) {
-				try {
-					ini_set('session.save_handler','memcached');
-					ini_set('session.save_path',self::$session_memcached_server);
-					ini_set('session.cache_expire',intval(self::$session_timeout/60));
-					if(is_string(self::$x_session_name) && strlen(self::$x_session_name)) { session_name(self::$x_session_name); }
-					if(is_string($session_id) && strlen($session_id)) {
-						session_id($session_id);
-						$dbg_data .= 'Set new session id: '.$session_id."\n";
-					}//if(is_string($session_id) && strlen($session_id))
-					session_start();
-				} catch(\Exception $e) {
-					$errors[] = ['errstr'=>$e->getMessage(),'errno'=>$e->getCode(),'errfile'=>$e->getFile(),'errline'=>$e->getLine()];
-				} finally {
-					if(class_exists('\ErrorHandler') && \ErrorHandler::HasErrors()) {
-						$eh_errors = \ErrorHandler::GetErrors(TRUE);
-						$errors = array_merge($errors,$eh_errors);
-					}//if(class_exists('\ErrorHandler') && \ErrorHandler::HasErrors())
-					if(count($errors)>0) {
-						self::$session_started = FALSE;
-						self::Log2File(print_r($errors,1),$absolute_path.self::$logs_path.'/'.self::$errors_log_file);
-						$dbg_data .= 'Session start [handler: Memcached] errors: '.print_r($errors,1)."\n";
-					} else {
-						self::$session_started = TRUE;
-						$dbg_data .= 'Session start done [Memcached: Redis]'."\n";
-					}//if(count($errors)>0)
-				}//try
-			} elseif(class_exists('Memcache',FALSE)) {
-				try {
-					ini_set('session.save_handler','memcache');
-					ini_set('session.save_path',self::$session_memcached_server);
-					ini_set('session.cache_expire',intval(self::$session_timeout/60));
-					if(is_string(self::$x_session_name) && strlen(self::$x_session_name)) { session_name(self::$x_session_name); }
-					if(is_string($session_id) && strlen($session_id)) {
-						session_id($session_id);
-						$dbg_data .= 'Set new session id: '.$session_id."\n";
-					}//if(is_string($session_id) && strlen($session_id))
-					session_start();
-				} catch(\Exception $e) {
-					$errors[] = ['errstr'=>$e->getMessage(),'errno'=>$e->getCode(),'errfile'=>$e->getFile(),'errline'=>$e->getLine()];
-				} finally {
-					if(class_exists('\ErrorHandler') && \ErrorHandler::HasErrors()) {
-						$eh_errors = \ErrorHandler::GetErrors(TRUE);
-						$errors = array_merge($errors,$eh_errors);
-					}//if(class_exists('\ErrorHandler') && \ErrorHandler::HasErrors())
-					if(count($errors)>0) {
-						self::$session_started = FALSE;
-						self::Log2File(print_r($errors,1),$absolute_path.self::$logs_path.'/'.self::$errors_log_file);
-						$dbg_data .= 'Session start [handler: Memcache] errors: '.print_r($errors,1)."\n";
-					} else {
-						self::$session_started = TRUE;
-						$dbg_data .= 'Session start done [Memcache: Redis]'."\n";
-					}//if(count($errors)>0)
-				}//try
-			}//if(class_exists('Memcached',FALSE))
-		}//if(!$initialized && self::$session_memcached===TRUE)
-		if(class_exists('\ErrorHandler')) { \ErrorHandler::$silent_mode = FALSE; }
-		if(!self::$session_started) {
-			ini_set('session.save_handler','files');
-			if(strlen(self::$session_file_path)>0) {
-				if((substr(self::$session_file_path,0,1)=='/' || substr(self::$session_file_path,1,2)==':\\') && file_exists(self::$session_file_path)) {
-					session_save_path(self::$session_file_path);
-				} elseif(file_exists($absolute_path.'/'.self::$session_file_path)) {
-					session_save_path($absolute_path.'/'.self::$session_file_path);
-				}//if((substr(self::$session_file_path,0,1)=='/' || substr(self::$session_file_path,1,2)==':\\') && file_exists(self::$session_file_path))
-			}//if(strlen(self::$session_file_path)>0)
-			if(is_string(self::$x_session_name) && strlen(self::$x_session_name)) { session_name(self::$x_session_name); }
-			if(is_string($session_id) && strlen($session_id)) {
-				session_id($session_id);
-				$dbg_data .= 'Set new session id: '.$session_id."\n";
-			}//if(is_string($session_id) && strlen($session_id))
-			session_start();
-			self::$session_started = TRUE;
-			$dbg_data .= 'Session started [handler: Files]'."\n";
-		}//if(!$initialized)
-		return $dbg_data;
-	}//END public static function ConfigAndStartSession
-	/**
-	 * Initiate/re-initiate session and read session data
-	 *
-	 * @param string $path
-	 * @param null   $do_not_keep_alive
-	 * @return void
-	 * @access public
-	 * @static
-	 */
-	public static function SessionStart($path = '',$do_not_keep_alive = NULL) {
-		$dbg_data = '>> '.(isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : 'console')."\n";
-		$dbg_data .= 'Session started: '.(self::$session_started ? 'TRUE' : 'FALSE')."\n";
-		$absolute_path = _AAPP_ROOT_PATH._AAPP_APPLICATION_PATH;
-		$cremoteaddress = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '0.0.0.0';
-		$cdomain = strtolower((array_key_exists('HTTP_HOST',$_SERVER) && $_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'localhost');
-		$cfulldomain = $cdomain.$path;
-		$cuseragent = array_key_exists('HTTP_USER_AGENT',$_SERVER) ? $_SERVER['HTTP_USER_AGENT'] : 'UNKNOWN USER AGENT';
-		if(!self::$session_started) { $dbg_data .= self::ConfigAndStartSession($absolute_path,$cdomain); }
-		$dbg_data .= 'Session ID: '.session_id()."\n";
-		$dbg_data .= 'Session age: '.(isset($_SESSION['X_SCAT']) ? (time()-$_SESSION['X_SCAT']) : 'N/A')."\n";
-		$dbg_data .= 'Last request: '.(isset($_SESSION['X_SEXT']) ? (time()-$_SESSION['X_SEXT']) : 'N/A')."\n";
-		$dbg_data .= 'X_SKEY: '.(isset($_SESSION['X_SKEY']) ? $_SESSION['X_SKEY'] : 'N/A')."\n";
-        if(!isset($_SESSION['X_SEXT']) || !isset($_SESSION['X_SKEY']) || ($_SESSION['X_SEXT']+self::$session_timeout)<time() || $_SESSION['X_SKEY']!=self::GetNewUID(self::$session_key.session_id(),'sha256',TRUE)) {
-            $dbg_data .= 'Do: SESSION RESET'."\n";
-        	$_SESSION = array();
-		    setcookie(session_name(),'',time()-4200,'/',$cdomain);
-			session_destroy();
-			ini_set('session.use_cookies',1);
-			ini_set('session.cookie_lifetime',0);
-			ini_set('cookie_domain',$cdomain);
-			ini_set('session.gc_maxlifetime',self::$session_timeout);
-			ini_set('session.cache_expire',self::$session_timeout/60);
-			$new_session_id = self::GetNewUID($cfulldomain.$cuseragent.$cremoteaddress,'sha256');
-			$dbg_data .= self::ConfigAndStartSession($absolute_path,$cdomain,$new_session_id);
-			$_SESSION['X_SCAT'] = time();
-			$_SESSION['SESSION_ID'] = session_id();
-			$dbg_data .= 'Session ID (new): '.session_id()."\n";
-		}//if(!isset($_SESSION['X_SEXT']) || !isset($_SESSION['X_SKEY']) || ($_SESSION['X_SEXT']+self::$session_timeout)<time() || $_SESSION['X_SKEY']!=self::GetNewUID(self::$session_key.session_id(),'sha256',TRUE))
-		set_time_limit(self::$request_time_limit);
-		$_SESSION['X_SKEY'] = self::GetNewUID(self::$session_key.session_id(),'sha256',TRUE);
-		$dbg_data .= 'Do not keep alive: '.($do_not_keep_alive!==TRUE && $do_not_keep_alive!==1 ? 'FALSE' : 'TRUE')."\n";
-		if($do_not_keep_alive!==TRUE && $do_not_keep_alive!==1) { $_SESSION['X_SEXT'] = time(); }
-		// vprint($dbg_data);
-		// self::Log2File($dbg_data,$absolute_path.self::$logs_path.'/'.self::$debugging_log_file);
-    }//END public static function SessionStart
-    /**
-	 * Close session for write
-	 *
-	 * @return void
-	 * @access public
-	 * @static
-	 */
-	public static function SessionClose($write = TRUE) {
-		if(!self::$session_started) { return; }
-		if($write) {
-			session_write_close();
-		} else {
-			session_abort();
-		}//if($write)
-		self::$session_started = FALSE;
-	}//END public static function SessionClose
 	/**
 	 * PAF constructor function
 	 *
-	 * @param  bool $ajax Optional flag indicating whether is an ajax request or not
+	 * @param  bool  $ajax Optional flag indicating whether is an ajax request or not
 	 * @param  array $params An optional key-value array containing to be assigned to non-static properties
 	 * (key represents name of the property and value the value to be assigned)
-	 * @param  bool $with_session Start PHP session (default FALSE)
-	 * @param  bool $do_not_keep_alive Do not keep alive user session
-	 * @param  bool $shell Shell mode on/off
-	 * @throws \ReflectionException
+	 * @param  bool  $do_not_keep_alive Do not keep alive user session
+	 * @param  bool  $shell Shell mode on/off
+	 * @throws \Exception|\ReflectionException
 	 * @return void
 	 * @access protected
 	 */
-	protected function __construct($ajax = FALSE,$params = array(),$with_session = FALSE,$do_not_keep_alive = NULL,$shell = FALSE) {
+	protected function __construct($ajax = FALSE,$params = [],$do_not_keep_alive = NULL,$shell = FALSE) {
 		$this->app_absolute_path = _AAPP_ROOT_PATH;
 		$this->app_path = _AAPP_ROOT_PATH._AAPP_APPLICATION_PATH;
 		$this->app_public_path = _AAPP_ROOT_PATH._AAP_PUBLIC_ROOT_PATH._AAP_PUBLIC_PATH;
 		$this->ajax = $ajax;
-		$this->with_session = $with_session;
 		$this->keep_alive = $do_not_keep_alive ? FALSE : TRUE;
 		if($shell) {
-			self::$data = array();
 			$this->_app_state = TRUE;
-			$this->app_domain = trim(get_array_param($_GET,'domain','','is_string'),' /\\');
-			if(strlen($this->app_domain)) {
-				$this->app_web_protocol = trim(get_array_param($_GET,'protocol','http','is_notempty_string'),' /:\\').'://';
-				$this->url_folder = trim(get_array_param($_GET,'uri_path','','is_string'),' /\\');
-				$this->app_web_link = $this->app_web_protocol.$this->app_domain.(strlen($this->url_folder) ? '/' : '').$this->url_folder;
-			}//if(strlen($this->app_domain))
+			$app_domain = trim(get_array_param($_GET,'domain','','is_string'),' /\\');
+			if(strlen($app_domain)) {
+				$app_web_protocol = trim(get_array_param($_GET,'protocol','http','is_notempty_string'),' /:\\').'://';
+				$url_folder = trim(get_array_param($_GET,'uri_path','','is_string'),' /\\');
+			} else {
+				$app_web_protocol = '';
+				$url_folder = '';
+			}//if(strlen($app_domain))
+			$this->url = new AppUrl($app_domain,$app_web_protocol,$url_folder);
+			$this->app_web_link = $this->url->GetWebLink();
 		} else {
-			$this->_app_state = $with_session ? isset(self::$data) : TRUE;
-			$this->app_web_protocol = (isset($_SERVER["HTTPS"]) ? 'https' : 'http').'://';
-			$this->app_domain = strtolower((array_key_exists('HTTP_HOST',$_SERVER) && $_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'localhost');
-			$this->url_folder = self::ExtractUrlPath((is_array($params) && array_key_exists('startup_path',$params) ? $params['startup_path'] : NULL));
-			$this->app_web_link = $this->app_web_protocol.$this->app_domain.$this->url_folder;
-			if(self::$split_session_by_page) {
+			$this->_app_state = AppSession::WithSession() ? AppSession::GetState() : TRUE;
+			$app_web_protocol = (isset($_SERVER["HTTPS"]) ? 'https' : 'http').'://';
+			$app_domain = strtolower((array_key_exists('HTTP_HOST',$_SERVER) && $_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'localhost');
+			$url_folder = AppUrl::ExtractUrlPath((is_array($params) && array_key_exists('startup_path',$params) ? $params['startup_path'] : NULL));
+			$this->url = new AppUrl($app_domain,$app_web_protocol,$url_folder);
+			$this->app_web_link = $this->url->GetWebLink();
+			if(AppConfig::split_session_by_page()) {
 				$this->phash = get_array_param($_GET,'phash',get_array_param($_POST,'phash',NULL,'is_notempty_string'),'is_notempty_string');
 				if(!$this->phash) {
-					$this->phash = is_array($_COOKIE) && array_key_exists('__x_pHash_',$_COOKIE) && strlen($_COOKIE['__x_pHash_']) && strlen($_COOKIE['__x_pHash_'])>12 ? substr($_COOKIE['__x_pHash_'],0,-12) : NULL;
+					$this->phash = is_array($_COOKIE) && array_key_exists('__aapp_pHash_',$_COOKIE) && strlen($_COOKIE['__aapp_pHash_']) && strlen($_COOKIE['__aapp_pHash_'])>15 ? substr($_COOKIE['__aapp_pHash_'],0,-15) : NULL;
 				}//if(!$this->phash)
-				if(!$this->phash ) { $this->phash = self::GetNewUID(); }
-			}//if(self::$split_session_by_page)
-			$uri_len = strpos($_SERVER['REQUEST_URI'],'?')!==FALSE ? strpos($_SERVER['REQUEST_URI'],'?') : (strpos($_SERVER['REQUEST_URI'],'#')!==FALSE ? strpos($_SERVER['REQUEST_URI'],'#') : strlen($_SERVER['REQUEST_URI']));
-			$this->url_base = $this->app_web_protocol.$this->app_domain.substr($_SERVER['REQUEST_URI'],0,$uri_len);
-			$this->url_data = is_array($_GET) ? $this->SetUrlParams($_GET) : array();
+				if(!$this->phash ) { $this->phash = AppSession::GetNewUID(); }
+			}//if(AppConfig::split_session_by_page())
 		}//if($shell)
 		if(is_array($params) && count($params)>0) {
 			foreach($params as $key=>$value) {
@@ -565,108 +268,6 @@ class App extends AppConfig {
 		$this->StartOutputBuffer();
 	}//END protected function __construct
 	/**
-	 * Commit the temporary session into the session
-	 *
-	 * @param  bool  $clear If TRUE is passed the session will be cleared
-	 * @param  bool  $preserve_output_buffer If true output buffer is preserved
-	 * @param  bool $show_errors Display errors TRUE/FALSE
-	 * @param  string $key Session key to commit (do partial commit)
-	 * @param  string $phash Page (tab) hash
-	 * @poaram bool $reload Reload session after commit (default TRUE)
-	 * @return void
-	 * @access public
-	 */
-	public function SessionCommit($clear = FALSE,$preserve_output_buffer = FALSE,$show_errors = TRUE,$key = NULL,$phash = NULL,$reload = TRUE) {
-		if(!$this->with_session) {
-			if($show_errors && method_exists('\ErrorHandler','ShowErrors')) { \ErrorHandler::ShowErrors(); }
-			if($preserve_output_buffer!==TRUE) { $this->FlushOutputBuffer(); }
-			return;
-		}//if(!$this->with_session)
-		if(!is_array(self::$data)) { self::$data = array(); }
-		$lphash = isset($phash) ? $phash : $this->phash;
-		if(!self::$session_started) { session_start(); }
-		if($clear===TRUE || $this->clear_session===TRUE) {
-			if(strlen($key)) {
-				if(strlen($phash)) {
-					unset(self::$initial_data[$key][$phash]);
-					unset(self::$data[$key][$phash]);
-					unset($_SESSION[$key][$phash]);
-				} else {
-					unset(self::$initial_data[$key]);
-					unset(self::$data[$key]);
-					unset($_SESSION[$key]);
-				}//if(strlen($phash))
-			} else {
-				if(strlen($phash)) {
-					unset(self::$initial_data[$phash]);
-					unset(self::$data[$phash]);
-					unset($_SESSION[$phash]);
-				} else {
-					self::$initial_data = NULL;
-					self::$data = NULL;
-					unset($_SESSION);
-				}//if(strlen($phash))
-			}//if(strlen($key))
-		} else {
-			if(strlen($key)) {
-				if(strlen($phash)) {
-					$lvalue = (array_key_exists($key,self::$data) && is_array(self::$data[$key]) && array_key_exists($phash,self::$data[$key])) ? self::$data[$key][$phash] : NULL;
-					$li_arr = (array_key_exists($key,self::$initial_data) && is_array(self::$initial_data[$key]) && array_key_exists($phash,self::$initial_data[$key])) ? self::$initial_data[$key][$phash] : NULL;
-					if(array_key_exists($key,$_SESSION) && is_array($_SESSION[$key]) && array_key_exists($phash,$_SESSION[$key])) {
-						$_SESSION[$key][$phash] = custom_array_merge($_SESSION[$key][$phash],$lvalue,TRUE,$li_arr);
-					} else {
-						$_SESSION[$key][$phash] = $lvalue;
-					}//if(array_key_exists($key,$_SESSION) && is_array($_SESSION[$key]) && array_key_exists($phash,$_SESSION[$key]))
-				} else {
-					$lvalue = array_key_exists($key,self::$data) ? self::$data[$key] : NULL;
-					$li_arr = array_key_exists($key,self::$initial_data) ? self::$initial_data[$key] : NULL;
-					if(array_key_exists($key,$_SESSION)) {
-						$_SESSION[$key] = custom_array_merge($_SESSION[$key],$lvalue,TRUE,$li_arr);
-					} else {
-						$_SESSION[$key] = $lvalue;
-					}//if(array_key_exists($key,$_SESSION))
-				}//if(strlen($phash))
-			} else {
-				if(strlen($phash)) {
-					$lvalue = array_key_exists($phash,self::$data) ? self::$data[$phash] : NULL;
-					$li_arr = is_array(self::$initial_data) && array_key_exists($phash,self::$initial_data) ? self::$initial_data[$phash] : NULL;
-					if(array_key_exists($phash,$_SESSION)) {
-						$_SESSION[$phash] = custom_array_merge($_SESSION[$phash],$lvalue,TRUE,$li_arr);
-					} else {
-						$_SESSION[$phash] = $lvalue;
-					}//if(array_key_exists($phash,$_SESSION))
-				} else {
-					$_SESSION = custom_array_merge($_SESSION,self::$data,TRUE,self::$initial_data);
-				}//if(strlen($phash))
-			}//if(strlen($key))
-			if($reload) {
-				self::$data = $_SESSION;
-				self::$initial_data = self::$data;
-			}//if($reload)
-		}//($clear===TRUE || $this->clear_session===TRUE)
-		if(!self::$session_started) { session_write_close(); }
-		if($show_errors && method_exists('\ErrorHandler','ShowErrors')) { \ErrorHandler::ShowErrors(); }
-		if($preserve_output_buffer!==TRUE) { $this->FlushOutputBuffer(); }
-	}//END public function SessionCommit
-	/**
-	 * Gets the session state befor current request (TRUE for existing session or FALSE for newly initialized)
-	 *
-	 * @return bool Session state (TRUE for existing session or FALSE for newly initialized)
-	 * @access public
-	 */
-	public function GetSessionState() {
-		return $this->_app_state;
-	}//END public function GetSessionState
-	/**
-	 * Set clear session flag (on commit session will be cleared)
-	 *
-	 * @return void
-	 * @access public
-	 */
-	public function ClearSession() {
-		$this->clear_session = TRUE;
-	}//END public function ClearSession
-	/**
 	 * Gets application absolute path
 	 *
 	 * @return string Returns the application absolute path
@@ -676,27 +277,83 @@ class App extends AppConfig {
 		return $this->app_absolute_path;
 	}//END public function GetAppAbsolutePath
 	/**
-	 * Gets a session parameter at a certain path (path = a succession of keys of the session data array)
-	 *
-	 * @param  string $key The key of the searched parameter
-	 * @param  string $path An array containing the succession of keys for the searched parameter
-	 * @param  array $data The session data array to be searched
-	 * @return mixed Value of the parameter if it exists or NULL
-	 * @access protected
+	 * @return bool
 	 */
-	protected function GetCustomParam($key,$path,$data) {
-		if(!is_array(self::$data)) { return NULL; }
-		if(is_array($path) && count($path)) {
-			$lpath = array_shift($path);
-			if(!strlen($lpath) || !array_key_exists($lpath,$data)) { return NULL; }
-			return $this->GetCustomParam($key,$path,$data[$lpath]);
-		}//if(is_array($path) && count($path))
-		if(is_string($path) && strlen($path)) {
-			if(!array_key_exists($path,$data) || !is_array($data[$path])) { return NULL; }
-			return array_key_exists($key,$data[$path]) ? $data[$path][$key] : NULL;
-		}//if(is_string($path) && strlen($path))
-		return array_key_exists($key,$data) ? $data[$key] : NULL;
-	}//END protected function GetCustomParam
+	public function OutputBufferStarted() {
+		return self::$app_ob_started;
+	}//END public function OutputBufferStarted
+	/**
+	 * @return bool
+	 */
+	public function StartOutputBuffer() {
+		if(!$this->ajax && !AppConfig::bufferd_output() && !$this->debugger) { return FALSE; }
+		ob_start();
+		return (self::$app_ob_started = TRUE);
+	}//END public function StartOutputBuffer
+	/**
+	 * @param bool $end
+	 * @return bool
+	 */
+	public function FlushOutputBuffer($end = FALSE) {
+		if(!self::$app_ob_started) { return FALSE; }
+		if(is_object($this->debugger)) { $this->debugger->SendData(); }
+		if($end===TRUE) {
+			ob_end_flush();
+			self::$app_ob_started = FALSE;
+		} else {
+			ob_flush();
+		}//if($end===TRUE)
+		return TRUE;
+	}//END public function FlushOutputBuffer
+	/**
+	 * @param bool $clear
+	 * @return bool|string
+	 */
+	public function GetOutputBufferContent($clear = TRUE) {
+		if(!self::$app_ob_started) { return FALSE; }
+		if($clear===TRUE) {
+			$content = ob_get_clean();
+		} else {
+			$content = ob_get_contents();
+		}//if($clear===TRUE)
+		return $content;
+	}//END public function GetOutputBufferContent
+	/**
+	 * @param bool $end
+	 * @return bool
+	 */
+	public function ClearOutputBuffer($end = FALSE) {
+		if(!self::$app_ob_started) { return FALSE; }
+		if($end===TRUE) {
+			ob_end_clean();
+			self::$app_ob_started = FALSE;
+		} else {
+			ob_clean();
+		}//if($end===TRUE)
+		return TRUE;
+	}//END public function ClearOutputBuffer
+	/**
+	 * Commit the temporary session into the session
+	 *
+	 * @param  bool   $clear If TRUE is passed the session will be cleared
+	 * @param  bool  $preserve_output_buffer If true output buffer is preserved
+	 * @param  bool   $show_errors Display errors TRUE/FALSE
+	 * @param  string $key Session key to commit (do partial commit)
+	 * @param  string $phash Page (tab) hash
+	 * @param  bool   $reload Reload session data after commit
+	 * @return void
+	 * @poaram bool $reload Reload session after commit (default TRUE)
+	 * @access public
+	 */
+	public function SessionCommit($clear = FALSE,$preserve_output_buffer = FALSE,$show_errors = TRUE,$key = NULL,$phash = NULL,$reload = TRUE) {
+		if(!AppSession::WithSession()) {
+			if($show_errors && method_exists('\ErrorHandler','ShowErrors')) { \ErrorHandler::ShowErrors(); }
+			if($preserve_output_buffer!==TRUE) { $this->FlushOutputBuffer(); }
+			return;
+		}//if(!AppSession::WithSession())
+		AppSession::SessionCommit($clear,$show_errors,$key,$phash,$reload);
+		if($preserve_output_buffer!==TRUE) { $this->FlushOutputBuffer(); }
+	}//END public function SessionCommit
 	/**
 	 * Get a global parameter (a parameter from first level of the array) from the session data array
 	 *
@@ -710,17 +367,8 @@ class App extends AppConfig {
 	 * @access public
 	 */
 	public function GetGlobalParam($key,$phash = NULL,$path = NULL,$keys_case = NULL) {
-		if(!is_array(self::$data)) { return NULL; }
 		$lphash = isset($phash) ? $phash : $this->phash;
-		$lkey = self::ConvertToSessionCase($key,$keys_case);
-		$lpath = self::ConvertToSessionCase($path,$keys_case);
-		if($lphash) {
-			if(!array_key_exists($lphash,self::$data)) { return NULL; }
-			if(isset($lpath)) { return $this->GetCustomParam($lkey,$lpath,self::$data[$lphash]); }
-			return (array_key_exists($lkey,self::$data[$lphash]) ? self::$data[$lphash][$lkey] : NULL);
-		}//if($lphash)
-		if($lpath) { return $this->GetCustomParam($key,$lpath,self::$data); }
-		return (array_key_exists($lkey,self::$data) ? self::$data[$lkey] : NULL);
+		return AppSession::GetGlobalParam($key,$lphash,$path,$keys_case);
 	}//END public function GetGlobalParam
 	/**
 	 * Set a global parameter (a parameter from first level of the array) from the session data array
@@ -736,37 +384,8 @@ class App extends AppConfig {
 	 * @access public
 	 */
 	public function SetGlobalParam($key,$val,$phash = NULL,$path = NULL,$keys_case = NULL) {
-		if(!is_array(self::$data)) { self::$data = array(); }
 		$lphash = isset($phash) ? $phash : $this->phash;
-		$lkey = self::ConvertToSessionCase($key,$keys_case);
-		$lpath = self::ConvertToSessionCase($path,$keys_case);
-		if(isset($lpath)) {
-			if(is_array($lpath) && count($lpath)) {
-				$part_arr = array($lkey=>$val);
-				foreach(array_reverse($lpath) as $k) { $part_arr = array($k=>$part_arr); }
-				if($lphash) {
-					self::$data[$lphash] = custom_array_merge(self::$data[$lphash],$part_arr,TRUE);
-				} else {
-					self::$data = custom_array_merge(self::$data,$part_arr,TRUE);
-				}//if($lphash)
-				return TRUE;
-			}//if(is_array($path) && count($path))1
-			if(is_string($lpath) && strlen($lpath)) {
-				if($lphash) {
-					self::$data[$lphash][$lpath][$lkey] = $val;
-				} else {
-					self::$data[$lpath][$lkey] = $val;
-				}//if($lphash)
-				return TRUE;
-			}//if(is_string($path) && strlen($path))
-			return FALSE;
-		}//if(isset($path))
-		if($lphash) {
-			self::$data[$lphash][$lkey] = $val;
-		} else {
-			self::$data[$lkey] = $val;
-		}//if($lphash)
-		return TRUE;
+		return AppSession::SetGlobalParam($key,$val,$lphash,$path,$keys_case);
 	}//END public function SetGlobalParam
 	/**
 	 * Delete a global parameter (a parameter from first level of the array) from the session data array
@@ -774,87 +393,15 @@ class App extends AppConfig {
 	 * @param  string $key The key of the searched parameter
 	 * @param  string $phash The page hash (default NULL)
 	 * If FALSE is passed, the main (App property) page hash will not be used
-	 * @param  mixed  @keys_case Custom session keys case: CASE_LOWER/CASE_UPPER,
-	 * FALSE - do not change case, NULL - use the configuration value
-	 * @return void
+	 * @param  null   $path
+	 * @param  null   $keys_case
+	 * @return bool
 	 * @access public
 	 */
 	public function UnsetGlobalParam($key,$phash = NULL,$path = NULL,$keys_case = NULL) {
-		if(!is_array(self::$data)) { return TRUE; }
 		$lphash = isset($phash) ? $phash : $this->phash;
-		$lkey = self::ConvertToSessionCase($key,$keys_case);
-		$lpath = self::ConvertToSessionCase($path,$keys_case);
-		if(isset($lpath)) {
-			if(is_array($lpath) && count($lpath)) {
-				$part_arr = array($lkey=>NULL);
-				foreach(array_reverse($lpath) as $k) { $part_arr = array($k=>$part_arr); }
-				if($lphash) {
-					self::$data[$lphash] = custom_array_merge(self::$data[$lphash],$part_arr,TRUE);
-				} else {
-					self::$data = custom_array_merge(self::$data,$part_arr,TRUE);
-				}//if($lphash)
-				return TRUE;
-			}//if(is_array($path) && count($path))1
-			if(is_string($lpath) && strlen($lpath)) {
-				if($lphash) {
-					unset(self::$data[$lphash][$lpath][$lkey]);
-				} else {
-					unset(self::$data[$lpath][$lkey]);
-				}//if($lphash)
-				return TRUE;
-			}//if(is_string($path) && strlen($path))
-			return FALSE;
-		}//if(isset($path))
-		if($lphash) {
-			unset(self::$data[$lphash][$lkey]);
-		} else {
-			unset(self::$data[$lkey]);
-		}//if($lphash)
-		return TRUE;
+		return AppSession::UnsetGlobalParam($key,$lphash,$path,$keys_case);
 	}//END public function UnsetGlobalParam
-
-	public function OutputBufferStarted() {
-		return self::$aapp_ob_started;
-	}//END public function OutputBufferStarted
-
-	public function StartOutputBuffer() {
-		if(!$this->ajax && !self::$bufferd_output && !$this->debugger) { return FALSE; }
-		ob_start();
-		return (self::$aapp_ob_started = TRUE);
-	}//END public function StartOutputBuffer
-
-	public function FlushOutputBuffer($end = FALSE) {
-		if(!self::$aapp_ob_started) { return FALSE; }
-		if(is_object($this->debugger)) { $this->debugger->SendData(); }
-		if($end===TRUE) {
-			ob_end_flush();
-			self::$aapp_ob_started = FALSE;
-		} else {
-			ob_flush();
-		}//if($end===TRUE)
-		return TRUE;
-	}//END public function FlushOutputBuffer
-
-	public function GetOutputBufferContent($clear = TRUE) {
-		if(!self::$aapp_ob_started) { return FALSE; }
-		if($clear===TRUE) {
-			$content = ob_get_clean();
-		} else {
-			$content = ob_get_contents();
-		}//if($clear===TRUE)
-		return $content;
-	}//END public function GetOutputBufferContent
-
-	public function ClearOutputBuffer($end = FALSE) {
-		if(!self::$aapp_ob_started) { return FALSE; }
-		if($end===TRUE) {
-			ob_end_clean();
-			self::$aapp_ob_started = FALSE;
-		} else {
-			ob_clean();
-		}//if($end===TRUE)
-		return TRUE;
-	}//END public function ClearOutputBuffer
 	/**
 	 * Initialize ARequest object
 	 *
@@ -865,7 +412,7 @@ class App extends AppConfig {
 	 * @return bool
 	 * @access public
 	 */
-	public function ARequestInit($post_params = array(),$subsession = NULL,$js_init = TRUE,$with_output = TRUE) {
+	public function ARequestInit($post_params = [],$subsession = NULL,$js_init = TRUE,$with_output = TRUE) {
 		if(!is_object($this->arequest)) {
 			$this->arequest = new AjaxRequest($this,$subsession);
 			$this->arequest->SetPostParams($post_params);
@@ -880,9 +427,8 @@ class App extends AppConfig {
 	 * @param  string $subsession Sub-session key/path
 	 * @return void
 	 * @access public
-	 * @throws \PAF\AppException
 	 */
-	public function ExecuteARequest($post_params = array(),$subsession = NULL) {
+	public function ExecuteARequest($post_params = [],$subsession = NULL) {
 		$errors = '';
 		$request = array_key_exists('req',$_POST) ? $_POST['req'] : NULL;
 		if(!$request) { $errors .= 'Empty Request!'; }
@@ -895,38 +441,45 @@ class App extends AppConfig {
 		$requests = NULL;
 		if(!$errors) {
 			/* Start session and set ID to the expected paf session */
-			list($php,$session_id,$request_id) = explode(ARequest::$aapp_req_sep,$request);
+			list($php,$session_id,$request_id) = explode(AjaxRequest::$app_req_sep,$request);
 			/* Validate this request */
 			$spath = array(
-				self::ConvertToSessionCase(self::$aapp_session_key,ARequest::$aapp_session_keys_case),
-				self::ConvertToSessionCase('PAF_AREQUEST',ARequest::$aapp_session_keys_case),
+				AppSession::ConvertToSessionCase(AppConfig::app_session_key(),AjaxRequest::$session_keys_case),
+				AppSession::ConvertToSessionCase('PAF_AREQUEST',AjaxRequest::$session_keys_case),
 			);
-			$requests = $this->GetGlobalParam(self::ConvertToSessionCase('AREQUESTS',ARequest::$aapp_session_keys_case),FALSE,$spath,FALSE);
-			if(\GibberishAES::dec(rawurldecode($session_id),self::$session_key)!=session_id() || !is_array($requests)) {
+			$requests = AppSession::GetGlobalParam(AppSession::ConvertToSessionCase('AREQUESTS',AjaxRequest::$session_keys_case),FALSE,$spath,FALSE);
+			if(\GibberishAES::dec(rawurldecode($session_id),AppConfig::app_session_key())!=session_id() || !is_array($requests)) {
 				$errors .= 'Invalid Request!';
-			} elseif(!in_array(self::ConvertToSessionCase($request_id,ARequest::$aapp_session_keys_case),array_keys($requests))) {
+			} elseif(!in_array(AppSession::ConvertToSessionCase($request_id,AjaxRequest::$session_keys_case),array_keys($requests))) {
 				$errors .= 'Invalid Request Data!';
-			}//if(GibberishAES::dec(rawurldecode($session_id),self::$session_key)!=session_id() || !is_array($requests))
+			}//if(\GibberishAES::dec(rawurldecode($session_id),AppConfig::app_session_key())!=session_id() || !is_array($requests))
 		}//if(!$errors)
 		if(!$errors) {
 			/* Get function name and process file */
-			$REQ = $requests[self::ConvertToSessionCase($request_id,ARequest::$aapp_session_keys_case)];
-			$method = $REQ[self::ConvertToSessionCase('METHOD',ARequest::$aapp_session_keys_case)];
-			$lkey = self::ConvertToSessionCase('CLASS_FILE',ARequest::$aapp_session_keys_case);
-			$class_file = (array_key_exists($lkey,$REQ) && $REQ[$lkey]) ? $REQ[$lkey] : (self::$aapp_class_file ? self::$aapp_class_file : $this->app_path.self::$aapp_class_file_path.'/'.self::$aapp_class_file_name);
-			$lkey = self::ConvertToSessionCase('CLASS',ARequest::$aapp_session_keys_case);
-			$class = (array_key_exists($lkey,$REQ) && $REQ[$lkey]) ? $REQ[$lkey] : self::$aapp_class_name;
+			$REQ = $requests[AppSession::ConvertToSessionCase($request_id,AjaxRequest::$session_keys_case)];
+			$method = $REQ[AppSession::ConvertToSessionCase('METHOD',AjaxRequest::$session_keys_case)];
+			$lkey = AppSession::ConvertToSessionCase('CLASS',AjaxRequest::$session_keys_case);
+			$class = (array_key_exists($lkey,$REQ) && $REQ[$lkey]) ? $REQ[$lkey] : AppConfig::ajax_class_name();
 			/* Load the class extension containing the user functions */
-			try {
-				require_once($class_file);
-			} catch(\Exception $e) {
-				$errors = 'Class file: '.$class_file.' not found ('.$e->getMessage().') !';
-			}//try
+			$lkey = AppSession::ConvertToSessionCase('CLASS_FILE',AjaxRequest::$session_keys_case);
+			if(array_key_exists($lkey,$REQ) && isset($REQ[$lkey])) {
+				$class_file = $REQ[$lkey];
+			} else {
+				$app_class_file = AppConfig::ajax_class_file();
+				$class_file = $app_class_file ? $this->app_path.$app_class_file : '';
+			}//if(array_key_exists($lkey,$REQ) && isset($REQ[$lkey]))
+			if(strlen($class_file)) {
+				if(file_exists($class_file)) {
+					require_once($class_file);
+				} else {
+					$errors = 'Class file ['.$class_file.'] not found!';
+				}//if(file_exists($class_file))
+			}//if(strlen($class_file))
 			if(!$errors) {
 				/* Execute the requested function */
 				$this->arequest = new $class($this,$subsession);
 				$this->arequest->SetPostParams($post_params);
-				$errors = $this->arequest->ExecuteRequest($method,$php);
+				$this->arequest->ExecuteRequest($method,$php);
 				$this->SessionCommit(NULL,TRUE);
 				if($this->arequest->HasActions()) { echo $this->arequest->Send(); }
 				$content = $this->GetOutputBufferContent();
@@ -936,7 +489,7 @@ class App extends AppConfig {
 			echo $content;
 			//$this->ClearOutputBuffer(TRUE);
 		} else {
-			self::Log2File(array('type'=>'error','message'=>$errors,'no'=>-1,'file'=>__FILE__,'line'=>__LINE__),$this->app_path.self::$logs_path.'/'.self::$errors_log_file);
+			self::Log2File(['type'=>'error','message'=>$errors,'no'=>-1,'file'=>__FILE__,'line'=>__LINE__],$this->app_path.AppConfig::logs_path().'/'.AppConfig::errors_log_file());
 			$this->RedirectOnError();
 		}//if(!$errors)
 	}//END public function ExecuteARequest
@@ -948,326 +501,27 @@ class App extends AppConfig {
 	 */
 	protected function RedirectOnError() {
 		if($this->ajax) {
-			echo AjaxRequest::$aapp_act_sep.'window.location.href = "'.$this->app_web_link.'";';
+			echo AjaxRequest::$app_act_sep.'window.location.href = "'.$this->app_web_link.'";';
 		} else {
 			header('Location:'.$this->app_web_link);
 		}//if($this->ajax)
 		exit();
 	}//END protected function RedirectOnError
 	/**
-	 * description
-	 *
-	 * @param object|null $params Parameters object (instance of [Params])
-	 * @return void
-	 * @access public
-	 */
-	public function UrlParamToString($params,$keysonly = FALSE) {
-    	if(is_array($params)) {
-    		$keys = '';
-    		$texts = '';
-    		foreach($params as $k=>$v) {
-				$keys .= (strlen($keys) ? ',' : '').$k;
-				if($keysonly!==TRUE) { $texts .= (strlen($texts) ? ',' : '').str_to_url($v); }
-			}//foreach ($params as $k=>$v)
-			if($keysonly===TRUE) { return $keys; }
-			return $keys.(strlen($texts) ? '~'.$texts : '');
-    	} else {
-    		return (isset($params) ? $params : '');
-    	}//if(is_array($params))
-	}//END public function UrlParamToString
-	/**
-	 * description
-	 *
-	 * @param object|null $params Parameters object (instance of [Params])
-	 * @return void
-	 * @access public
-	 */
-	public function GetUrlParamElements($param) {
-		$result = NULL;
-		if(strlen($param)) {
-			$param_keys = strpos($param,'~')===FALSE ? $param : substr($param,0,(strpos($param,'~')));
-			$param_texts = strpos($param,'~')===FALSE ? '' : substr($param,(strpos($param,'~')+1));
-			$keys = explode(',',$param_keys);
-			$texts = strlen($param_texts)>0 ? explode(',',$param_texts) : NULL;
-			for($i=0; $i<count($keys); $i++) {
-				if(strlen($keys[$i])>0) {
-					if(!is_array($result)) {
-						$result = array();
-					}//if(!is_array($result))
-					$result[$keys[$i]] = (is_array($texts) && array_key_exists($i,$texts)) ? $texts[$i] : '';
-				}//if(strlen($keys[$i])>0)
-			}//for($i=0; $i<count($keys); $i++)
-		}//if(strlen($param))
-		return $result;
-	}//END public function GetUrlParamElements
-	/**
-	 * Get elements for a parameter from the url data array
-	 *
-	 * @param object|null $params Parameters object (instance of [Params])
-	 * @return void
-	 * @access public
-	 */
-	public function GetUrlComplexParam($key,$string = FALSE,$keysonly = FALSE) {
-		$result = array_key_exists($key,$this->url_data) ? $this->url_data[$key] : NULL;
-		if($string===TRUE && isset($result)) { return $this->UrlParamToString($result,$keysonly); }
-		return $result;
-	}//END public function GetUrlComplexParam
-	/**
-	 * Set a simple parameter into the url data array
-	 *
-	 * @param object|null $params Parameters object (instance of [Params])
-	 * @return void
-	 * @access public
-	 */
-	public function SetUrlComplexParam($key,$val) {
-		if(!is_array($key) || !count($val)) { return FALSE; }
-		$this->url_data[$key] = $val;
-		return TRUE;
-	}//END public function SetUrlComplexParam
-	/**
-	 * Unset a parameter from the url data array
-	 *
-	 * @param object|null $params Parameters object (instance of [Params])
-	 * @return void
-	 * @access public
-	 */
-	public function UnsetUrlComplexParam($key) {
-		unset($this->url_data[$key]);
-	}//END public function UnsetUrlComplexParam
-	/**
-	 * Get a simple parameter from the url data array
-	 *
-	 * @param object|null $params Parameters object (instance of [Params])
-	 * @return void
-	 * @access public
-	 */
-	public function GetUrlParam($key,$full = FALSE) {
-		return $this->GetUrlComplexParam($key,$full!==TRUE,TRUE);
-	}//END public function GetUrlParam
-	/**
-	 * Set a simple parameter into the url data array
-	 *
-	 * @param object|null $params Parameters object (instance of [Params])
-	 * @return void
-	 * @access public
-	 */
-	public function SetUrlParam($key,$val) {
-		return $this->SetUrlComplexParam($key,array($val=>''));
-	}//END public function SetUrlParam
-	/**
-	 * Unset a parameter from the url data array
-	 *
-	 * @param object|null $params Parameters object (instance of [Params])
-	 * @return void
-	 * @access public
-	 */
-	public function UnsetUrlParam($key) {
-		return $this->UnsetUrlComplexParam($key);
-	}//END public function UnsetUrlParam
-	/**
-	 * Gets n-th element from a parameter in the url data array
-	 *
-	 * @param object|null $params Parameters object (instance of [Params])
-	 * @return void
-	 * @access public
-	 */
-	public function GetUrlParamElement($key,$position = 0) {
-		if(strlen($key)>0 && array_key_exists($key,$this->url_data)) {
-			if(is_array($this->url_data[$key])) {
-				$i = 0;
-				foreach ($this->url_data[$key] as $k=>$v) {
-					if($i==$position) {
-						return $k;
-					} else {
-						$i++;
-					}//if($i==$position)
-				}//foreach ($this->url_data[$key] as $k=>$v)
-			} else {
-				return $this->url_data[$key];
-			}//if(is_array($this->url_data[$key]))
-		}//if(strlen($key)>0 && array_key_exists($key,$this->url_data))
-		return NULL;
-	}//END public function GetUrlParamElement
-	/**
-	 * Sets an element from a parameter in the url data array
-	 *
-	 * @param object|null $params Parameters object (instance of [Params])
-	 * @return void
-	 * @access public
-	 */
-	public function SetUrlParamElement($key,$element,$text = '') {
-		if(is_null($key) || is_null($element)) { return FALSE; }
-		$this->url_data[$key] = is_array($this->url_data[$key]) ? $this->url_data[$key] : array();
-		if(is_array($element)) {
-			foreach ($element as $k=>$v) {
-				$this->url_data[$key][$k] = str_to_url($v);
-			}//foreach ($element as $k=>$v)
-		} else {
-			$this->url_data[$key][$element] = str_to_url($text);
-		}//if(is_array($element))
-	}//END public function SetUrlParamElement
-	/**
-	 * Removes an element from a parameter in the url data array
-	 *
-	 * @param object|null $params Parameters object (instance of [Params])
-	 * @return void
-	 * @access public
-	 */
-	public function UnsetUrlParamElement($key,$element) {
-		if(is_null($key) || is_null($element)) { return FALSE; }
-		unset($this->url_data[$key][$element]);
-	}//END public function UnsetUrlParamElement
-	/**
-	 * description
-	 *
-	 * @param $url
-	 * @return array
-	 * @access public
-	 */
-	public function SetUrlParams($url) {
-		$result = array();
-		if(is_array($url)) {
-			foreach ($url as $k=>$v) { $result[$k] = $this->GetUrlParamElements($v); }
-		} else {
-			$param_str = explode('?',$url);
-			$param_str = count($param_str)>1 ? $param_str[1] : '';
-			if(strlen($param_str)>0) {
-				$params = explode('&',$param_str);
-				foreach ($params as $param) {
-					$element = explode('=',$param);
-					if(count($element)>1) { $result[$element[0]] = $this->GetUrlParamElements($element[1]); }
-				}//foreach ($params as $k=>$v)
-			}//if(strlen($param_str)>0)
-		}//if(is_array($url))
-		return $result;
-	}//END public function SetUrlParams
-	/**
-	 * description
-	 *
-	 * @param int  $url_format
-	 * @param null $params
-	 * @return void
-	 * @access public
-	 */
-	public function GetBaseUrl($url_format = URL_FORMAT_FRIENDLY,$params = NULL) {
-		$lurl_format = self::$x_mod_rewrite ? $url_format : URL_FORMAT_SHORT;
-		switch($lurl_format) {
-			case URL_FORMAT_FRIENDLY:
-				$lang = NULL;
-				$urlid = NULL;
-				$urlpath = NULL;
-				if(is_array($params) && count($params)) {
-					$lang = array_key_exists('language',$params) ? $this->UrlParamToString($params['language']) : NULL;
-					$urlid = array_key_exists('urlid',$params) ? $this->UrlParamToString($params['urlid']) : NULL;
-				}//if(is_array($params) && count($params))
-				if(is_null($lang)) {
-					$lang = array_key_exists('language',$this->url_data) ? $this->UrlParamToString($this->url_data['language']) : NULL;
-				}//if(is_null($lang))
-				if(is_null($urlid)) {
-					$urlid = array_key_exists('urlid',$this->url_data) ? $this->UrlParamToString($this->url_data['urlid']) : NULL;
-				}//if(is_null($urlid))
-				return $this->app_web_link.'/'.(strlen($this->url_virtual_path) ? $this->url_virtual_path.'/' : '').(strlen($lang) ? $lang.'/' : '').(strlen(trim($urlid,'/')) ? trim($urlid,'/').'/' : '');
-			case URL_FORMAT_FRIENDLY_ORIGINAL:
-				return $this->url_base;
-			case URL_FORMAT_FULL:
-				return $this->app_web_link.'/index.php';
-			case URL_FORMAT_SHORT:
-				return $this->app_web_link.'/';
-			case URL_FORMAT_URI_ONLY:
-			default:
-				return '';
-		}//END switch
-	}//END public function GetBaseUrl
-	/**
-	 * description
-	 *
-	 * @param null $params
-	 * @param null $rparams
-	 * @param int  $url_format
-	 * @return void
-	 * @access public
-	 */
-	public function GetUrl($params = NULL,$rparams = NULL,$url_format = URL_FORMAT_FRIENDLY) {
-		$data = $this->url_data;
-		if(is_array($rparams) && count($rparams)) {
-			foreach($rparams as $key=>$value) {
-				if(is_array($value)) {
-					foreach($value as $rv) { unset($data[$key][$rv]); }
-					if(count($data[$key])==0) { unset($data[$key]); }
-				} else {
-					unset($data[$value]);
-				}//if(is_array($value))
-			}//END foreach
-		}//if(is_array($rparams) && count($rparams))
-		if(is_array($params) && count($params)) { $data = custom_array_merge($data,$params,TRUE); }
-		return $this->GetNewUrl($data,$url_format);
-	}//END public function GetUrl
-	/**
-	 * description
-	 *
-	 * @param object|null $params Parameters object (instance of [Params])
-	 * @return void
-	 * @access public
-	 */
-	public function GetNewUrl($params = NULL,$url_format = URL_FORMAT_FRIENDLY) {
-		$result = '';
-		$anchor = '';
-		$lurl_format = self::$x_mod_rewrite ? $url_format : URL_FORMAT_SHORT;
-		if(is_array($params) && count($params)) {
-			$first = TRUE;
-			foreach($params as $k=>$v) {
-				if($k=='anchor') {
-					$anchor = $this->UrlParamToString($v);
-					continue;
-				}//if($k=='anchor')
-				if(($lurl_format==URL_FORMAT_FRIENDLY || $lurl_format==URL_FORMAT_FRIENDLY_ORIGINAL) && in_array($k,$this->special_url_params)) { continue; }
-				$val = $this->UrlParamToString($v);
-				if(in_array($k,$this->special_url_params) && !$val) { continue; }
-				$prefix = '&';
-				if($first) {
-					$first = FALSE;
-					$prefix = '?';
-				}//if($first)
-				$result .= $prefix.$k.'='.$val;
-			}//END foreach
-		}//if(is_array($params) && count($params))
-		return $this->GetBaseUrl($lurl_format,$params).$result.(strlen($anchor) ? '#'.$anchor : '');
-	}//END public function GetNewUrl
-	/**
-	 * description
-	 *
-	 * @param object|null $params Parameters object (instance of [Params])
-	 * @return void
-	 * @access public
-	 */
-	public function UrlElementExists($key,$element = NULL) {
-		if(is_null($element)) {
-			if(array_key_exists($key,$this->url_data) && isset($this->url_data[$key])) {
-				return TRUE;
-			}//if(array_key_exists($key,$this->url_data) && isset($this->url_data[$key]))
-		} else {
-			if(array_key_exists($key,$this->url_data) && array_key_exists($element,$this->url_data[$key])) {
-				return TRUE;
-			}//if(array_key_exists($key,$this->url_data) && array_key_exists($element,$this->url_data[$key]))
-		}//if(is_null($element))
-		return FALSE;
-	}//END public function UrlElementExists
-	/**
 	 * Initialize debug environment
 	 *
-	 * @return void
-	 * @access public
+	 * @return bool
 	 * @throws \Exception
+	 * @access public
 	 */
     public function InitDebugger() {
-		if(self::$debug!==TRUE || !class_exists('PAF\Debugger')) { return FALSE; }
+		if(AppConfig::debug()!==TRUE || !class_exists('PAF\Debugger')) { return FALSE; }
 		if(is_object($this->debugger)) { return $this->debugger->IsEnabled(); }
 		$tmp_path = isset($_SERVER['DOCUMENT_ROOT']) && strpos(_AAPP_ROOT_PATH, $_SERVER['DOCUMENT_ROOT'])!==FALSE ? _AAPP_ROOT_PATH.'/../tmp' : _AAPP_ROOT_PATH._AAPP_APPLICATION_PATH.'/tmp';
-		$this->debugger = new Debugger(self::$debug,_AAPP_ROOT_PATH.self::GetPafAppRelativePath().'/debug',_AAPP_ROOT_PATH._AAPP_APPLICATION_PATH.self::$logs_path,$tmp_path);
-		$this->debugger->phpconsole_password = self::$phpconsole_password;
-		$this->debugger->log_file = self::$log_file;
-		$this->debugger->errors_log_file = self::$errors_log_file;
-		$this->debugger->debug_log_file = self::$debug_log_file;
+		$this->debugger = new Debugger(AppConfig::debug(),_AAPP_ROOT_PATH._AAPP_APPLICATION_PATH.AppConfig::logs_path(),$tmp_path,AppConfig::debug_console_password());
+		$this->debugger->log_file = AppConfig::log_file();
+		$this->debugger->errors_log_file = AppConfig::errors_log_file();
+		$this->debugger->debug_log_file = AppConfig::debug_log_file();
 		return $this->debugger->IsEnabled();
 	}//END public function DebuggerStart
 	/**
@@ -1278,45 +532,47 @@ class App extends AppConfig {
 	 * @static
 	 */
     public static function GetDebuggerState() {
-		if(!is_object(self::$_aapp_instance)) { return FALSE; }
-		return is_object(self::$_aapp_instance->debugger);
+		if(!is_object(self::$_app_instance)) { return FALSE; }
+		return is_object(self::$_app_instance->debugger);
     }//END public static function GetDebuggerState
 	/**
 	 * Displays a value in the debugger plug-in as a debug message
 	 *
-	 * @param  mixed $value Value to be displayed by the debug objects
- 	 * @param  string $label Label assigned to the value to be displayed
+	 * @param  mixed   $value Value to be displayed by the debug objects
+	 * @param  string  $label Label assigned to the value to be displayed
 	 * @param  boolean $file Output file name
 	 * @param  boolean $path Output file path
 	 * @return void
 	 * @access public
+	 * @throws \Exception
 	 */
 	public function Dlog($value,$label = '',$file = FALSE,$path = FALSE) {
 		if(!is_object($this->debugger)) { return; }
-		if(self::$console_show_file===TRUE || $file===TRUE) {
+		if(AppConfig::console_show_file()===TRUE || $file===TRUE) {
 			$dbg = debug_backtrace();
 			$caller = array_shift($dbg);
 			$label = (isset($caller['file']) ? ('['.($path===TRUE ? $caller['file'] : basename($caller['file'])).(isset($caller['line']) ? ':'.$caller['line'] : '').']') : '').$label;
-		}//if(self::$console_show_file===TRUE || $file===TRUE)
+		}//if(AppConfig::console_show_file()===TRUE || $file===TRUE)
 		$this->debugger->Debug($value,$label,DBG_DEBUG);
 	}//END public function Dlog
 	/**
 	 * Displays a value in the debugger plug-in as a warning message
 	 *
-	 * @param  mixed $value Value to be displayed by the debug objects
-	 * @param  string $label Label assigned to the value to be displayed
+	 * @param  mixed   $value Value to be displayed by the debug objects
+	 * @param  string  $label Label assigned to the value to be displayed
 	 * @param  boolean $file Output file name
 	 * @param  boolean $path Output file path
 	 * @return void
 	 * @access public
+	 * @throws \Exception
 	 */
 	public function Wlog($value,$label = '',$file = FALSE,$path = FALSE) {
 		if(!is_object($this->debugger)) { return; }
-		if(self::$console_show_file===TRUE || $file===TRUE) {
+		if(AppConfig::console_show_file()===TRUE || $file===TRUE) {
 			$dbg = debug_backtrace();
 			$caller = array_shift($dbg);
 			$label = (isset($caller['file']) ? ('['.($path===TRUE ? $caller['file'] : basename($caller['file'])).(isset($caller['line']) ? ':'.$caller['line'] : '').']') : '').$label;
-		}//if(self::$console_show_file===TRUE || $file===TRUE)
+		}//if(AppConfig::console_show_file()===TRUE || $file===TRUE)
 		$this->debugger->Debug($value,$label,DBG_WARNING);
 	}//END public function Wlog
 	/**
@@ -1328,14 +584,15 @@ class App extends AppConfig {
 	 * @param  boolean $path Output file path
 	 * @return void
 	 * @access public
+	 * @throws \Exception
 	 */
 	public function Elog($value,$label = '',$file = FALSE,$path = FALSE) {
 		if(!is_object($this->debugger)) { return; }
-		if(self::$console_show_file===TRUE || $file===TRUE) {
+		if(AppConfig::console_show_file()===TRUE || $file===TRUE) {
 			$dbg = debug_backtrace();
 			$caller = array_shift($dbg);
 			$label = (isset($caller['file']) ? ('['.($path===TRUE ? $caller['file'] : basename($caller['file'])).(isset($caller['line']) ? ':'.$caller['line'] : '').']') : '').$label;
-		}//if(self::$console_show_file===TRUE || $file===TRUE)
+		}//if(AppConfig::console_show_file()===TRUE || $file===TRUE)
 		$this->debugger->Debug($value,$label,DBG_ERROR);
 	}//END public function Elog
 	/**
@@ -1347,14 +604,15 @@ class App extends AppConfig {
 	 * @param  boolean $path Output file path
 	 * @return void
 	 * @access public
+	 * @throws \Exception
 	 */
 	public function Ilog($value,$label = '',$file = FALSE,$path = FALSE) {
 		if(!is_object($this->debugger)) { return; }
-		if(self::$console_show_file===TRUE || $file===TRUE) {
+		if(AppConfig::console_show_file()===TRUE || $file===TRUE) {
 			$dbg = debug_backtrace();
 			$caller = array_shift($dbg);
 			$label = (isset($caller['file']) ? ('['.($path===TRUE ? $caller['file'] : basename($caller['file'])).(isset($caller['line']) ? ':'.$caller['line'] : '').']') : '').$label;
-		}//if(self::$console_show_file===TRUE || $file===TRUE)
+		}//if(AppConfig::console_show_file()===TRUE || $file===TRUE)
 		$this->debugger->Debug($value,$label,DBG_INFO);
 	}//END public function Ilog
 	/**
@@ -1363,33 +621,32 @@ class App extends AppConfig {
 	 * @param  string $msg Text to be written to log
 	 * @param  string $type Log type (log, error or debug) (optional)
 	 * @param  string $file Custom log file complete name (path + name) (optional)
+	 * @param string  $path
 	 * @return bool|string
 	 * @access public
-	 * @throws \PAF\AppException
 	 */
 	public function Write2LogFile($msg,$type = 'log',$file = '',$path = '') {
 		if(is_object($this->debugger)) { return $this->debugger->Write2LogFile($msg,$type,$file,$path); }
-		$lpath = (is_string($path) && strlen($path) ? rtrim($path,'/') : _AAPP_ROOT_PATH._AAPP_APPLICATION_PATH.self::$logs_path).'/';
+		$lpath = (is_string($path) && strlen($path) ? rtrim($path,'/') : _AAPP_ROOT_PATH._AAPP_APPLICATION_PATH.AppConfig::logs_path()).'/';
 		switch(strtolower($type)) {
 			case 'error':
-				return Debugger::Log2File($msg,$lpath.(strlen($file) ? $file : self::$errors_log_file));
+				return Debugger::Log2File($msg,$lpath.(strlen($file) ? $file : AppConfig::errors_log_file()));
 			case 'debug':
-				return Debugger::Log2File($msg,$lpath.(strlen($file) ? $file : self::$debugging_log_file));
+				return Debugger::Log2File($msg,$lpath.(strlen($file) ? $file : AppConfig::debugging_log_file()));
 			case 'log':
 			default:
-				return Debugger::Log2File($msg,$lpath.(strlen($file) ? $file : self::$log_file));
+				return Debugger::Log2File($msg,$lpath.(strlen($file) ? $file : AppConfig::log_file()));
 		}//switch(strtolower($type))
 	}//END public function WriteToLog
 	/**
 	 * description
 	 *
-	 * @param  string $msg Text to be written to log
+	 * @param  string|array $msg Text to be written to log
 	 * @param  string $file Custom log file complete name (path + name) (optional)
 	 * @param  string $script_name Name of the file that sent the message to log (optional)
 	 * @return bool|string Returns TRUE for success or error message on failure
 	 * @access public
 	 * @static
-	 * @throws \PAF\AppException
 	 */
 	public static function Log2File($msg,$file = '',$script_name = '') {
 		return Debugger::Log2File($msg,$file,$script_name);

@@ -10,8 +10,8 @@
  */
 
 if(AAPP_PHASH && window.name!=AAPP_PHASH) { window.name = AAPP_PHASH; }
-$(window).on('load',function() { setCookie('__x_pHash_','',1); });
-$(window).on('beforeunload',function() { setCookie('__x_pHash_',window.name,1); });
+$(window).on('load',function() { setCookie('__aapp_pHash_','',1); });
+$(window).on('beforeunload',function() { setCookie('__aapp_pHash_',window.name,1); });
 
 var ARequest = {
 	procOn : {},
@@ -592,18 +592,18 @@ function getUid() {
 	return (Math.round(Math.random()*1000000)) + '-' + d.getTime() + '-' + d.getMilliseconds();
 }//function getUid
 
-function setCookie(name,value,valability) {
+function setCookie(name,value,validity) {
 	var expdate = undefined;
-	if(valability>0) {
+	if(validity>0) {
 		expdate = new Date();
-		expdate.setDate(expdate.getDate() + valability);
-	}//if(valability>0)
-	document.cookie = name+'='+encodeURIComponent(encodeURI(value))+']'+name+'|'+(expdate ? '; expires='+expdate.toGMTString() : '')+'; path=/; domain='+location.host+';';
+		expdate.setDate(expdate.getDate() + validity);
+	}//if(validity>0)
+	document.cookie = name+'='+encodeURIComponent(value)+']'+name+'|'+(expdate ? '; expires='+expdate.toGMTString() : '')+'; path=/; domain='+location.host+';';
 }//END function setCookie
 
 function getCookie(name) {
 	var result = undefined;
-    if(document.cookie.length>0 && document.cookie.indexOf('|'+name+'=')!=(-1)) { result = decodeURI(decodeURIComponent(document.cookie.substring(document.cookie.indexOf(name+'=')+name.length+2,document.cookie.indexOf(']'+name+'|')))); }
+    if(document.cookie.length>0 && document.cookie.indexOf('|'+name+'=')!=(-1)) { result = decodeURIComponent(document.cookie.substring(document.cookie.indexOf(name+'=')+name.length+2,document.cookie.indexOf(']'+name+'|'))); }
 	return result;
 }//END function getCookie
 
