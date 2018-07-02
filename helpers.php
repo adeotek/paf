@@ -9,7 +9,7 @@
  * @author     George Benjamin-Schonberger
  * @copyright  Copyright (c) 2012 - 2018 AdeoTEK
  * @license    LICENSE.md
- * @version    2.1.2
+ * @version    2.1.3
  * @filesource
  */
 	/**
@@ -574,6 +574,7 @@
 				$dt = $date;
 			} else {
 				$date = trim($date,' -.:/');
+				if(!strlen($date)) { return NULL; }
 				$dt = strlen($timezone) ? new DateTime($date,new DateTimeZone($timezone)) : new DateTime($date);
 			}//if(strlen($timezone))
 			if(strlen($new_timezone) && $new_timezone!==$timezone) {
