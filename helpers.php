@@ -475,6 +475,46 @@
 		return validate_param($array[$key],NULL,$validation,TRUE);
 	}//END function check_array_key
 	/**
+	 * Extracts a value from a an multi-dimensional array
+	 *
+	 * @param   array $params Params array
+	 * (parsed as reference)
+	 * @param   string|array $key Key of the param to be returned
+	 * @param   mixed $def_value Default value to be returned if param is not validated
+	 * @param   string $validation Validation type
+	 * (as implemented in validate_param function)
+	 * @return  mixed Returns param value or default value if not validated
+	 */
+	function get_array_value(&$params,$key,$def_value = NULL,$validation = NULL) {
+	    if(is_array($key)) {
+	        if(!count($key)) { return $def_value; }
+	        $lKey = array_shift($key);
+	    } else {
+	        $lKey = $key;
+	        $key = [];
+	    }//if(is_array($key))
+	    if(is_null($lKey) || !(is_string($lKey) || is_integer($lKey))) { return $def_value; }
+		if(is_array($params)) {
+			if(!array_key_exists($lKey,$params)) { return $def_value; }
+			if(is_array($key) && count($key)) {
+			    $value = get_array_value($params[$lKey],$key,$def_value,$validation);
+			} else {
+			    $value = $params[$lKey];
+			}//if(is_array($key) && count($key))
+		} elseif(is_object($params) && method_exists($params,'toArray')) {
+			$lparams = $params->toArray();
+			if(!is_array($lparams) || !array_key_exists($lKey,$lparams)) { return $def_value; }
+			if(is_array($key) && count($key)) {
+			    $value = get_array_value($lparams[$lKey],$key,$def_value,$validation);
+			} else {
+			    $value = $lparams[$lKey];
+			}//if(is_array($key) && count($key))
+		} else {
+			return $def_value;
+		}//if(is_array($params))
+		return validate_param($value,$def_value,$validation);
+	}//END function get_array_value
+	/**
 	 * Extracts a param value from a params array
 	 *
 	 * @param   array $params Params array

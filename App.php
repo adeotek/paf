@@ -166,7 +166,7 @@ class App implements IApp {
 	 * @param  bool  $session_init Flag indicating if session should be started or not
 	 * @param  bool  $do_not_keep_alive Flag indicating if session should be kept alive by the current request
 	 * @param  bool  $shell Shell mode on/off
-	 * @return \PAF\IApp Returns the PAF application instance
+	 * @return Object
 	 * @throws \PAF\AppException
 	 * @access public
 	 * @static
