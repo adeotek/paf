@@ -37,6 +37,11 @@ class AppConfig {
 	 */
 	private static $data = NULL;
 	/**
+	 * @var    array|null An array of instance configuration options
+	 * @access private
+	 */
+	private static $instanceConfig = NULL;
+	/**
 	 * Initialize application configuration class (structure and data)
 	 *
 	 * @param array $data
@@ -79,5 +84,56 @@ class AppConfig {
 		}//if(is_array($arguments) && count($arguments))
 		return $result;
 	}//END public static function __callStatic
+	/**
+     * @return bool
+     * @access public
+     * @static
+     */
+    public static function IsInstanceConfigLoaded(): bool {
+        return isset(static::$instanceConfig);
+    }//END public static function IsInstanceConfigLoaded
+    /**
+     * @param array  $config
+     * @param string $contextIdField
+     * @param bool   $raw
+     * @return array
+     * @access public
+     * @static
+     */
+    public static function SetInstanceConfigData(array $config,bool $raw = TRUE,?string $contextIdField = NULL): array {
+        if($raw) {
+            static::$instanceConfig = [];
+            foreach($config as $item) {
+                $section = strtolower(get_array_param($item,'section','','is_string'));
+                $option = strtolower(get_array_param($item,'option','','is_string'));
+                if(!strlen($option)) { continue; }
+                $contextId = get_array_param($item,$contextIdField??'',NULL,'is_integer');
+                if(!isset(static::$instanceConfig[$section])) {
+                    static::$instanceConfig[$section] = [];
+                } elseif(!isset(static::$instanceConfig[$section][$option])) {
+                    static::$instanceConfig[$section][$option] = [];
+                }//if(!isset($result[$section]))
+                static::$instanceConfig[$section][$option][(string)$contextId] = get_array_param($item,'value','','is_string');
+            }//END foreach
+        } else {
+            static::$instanceConfig = $config;
+        }//if($raw)
+        return static::$instanceConfig;
+	}//END public static function SetInstanceConfigData
+	/**
+     * @param string   $option
+     * @param string   $section
+     * @param int|null $contextId
+     * @return string|null
+     * @access public
+     * @throws \Exception
+     * @static
+     */
+    public static function GetInstanceOption(string $option,string $section = '',?int $contextId = NULL): ?string {
+        $options = get_array_value(static::$instanceConfig,[strtolower($section),strtolower($option)],[],'is_array');
+        $defValue = get_array_param($options,'',NULL,'is_string');
+        if(is_null($contextId)) { return $defValue; }
+        return get_array_value($options,$contextId,$defValue,'is_string');
+	}//END public static function GetInstanceOption
 }//END class AppConfig
 ?>
