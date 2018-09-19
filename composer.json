@@ -21,7 +21,7 @@
 		"php-console/php-console": "^3.1",
 		"frankforte/quantumphp": "^1.0.11"
     },
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "autoload": {
         "psr-4": {
             "PAF\\": "src"
