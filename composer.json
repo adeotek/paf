@@ -1,6 +1,6 @@
 {
     "name": "adeotek/paf",
-    "description": "PhpAjaxFramework",
+    "description": "PAF - PHP Ajax Framework",
     "type": "library",
     "license": "MIT License",
     "authors": [
@@ -24,7 +24,7 @@
     "minimum-stability": "dev",
     "autoload": {
         "psr-4": {
-            "PAF\\": ""
+            "PAF\\": "src"
         }
     }
 }

@@ -295,7 +295,7 @@ class AppSession {
 		$dbg_data .= 'Session started: '.(self::$session_started ? 'TRUE' : 'FALSE')."\n";
 		$absolute_path = _AAPP_ROOT_PATH._AAPP_APPLICATION_PATH;
 		$cremoteaddress = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '0.0.0.0';
-		$cdomain = strtolower((array_key_exists('HTTP_HOST',$_SERVER) && $_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'localhost');
+		$cdomain = strtolower((array_key_exists('SERVER_NAME',$_SERVER) && $_SERVER['SERVER_NAME']) ? $_SERVER['SERVER_NAME'] : 'localhost');
 		$cfulldomain = $cdomain.$path;
 		$cuseragent = array_key_exists('HTTP_USER_AGENT',$_SERVER) ? $_SERVER['HTTP_USER_AGENT'] : 'UNKNOWN USER AGENT';
 		$session_timeout = AppConfig::session_timeout();
