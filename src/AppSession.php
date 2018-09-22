@@ -169,7 +169,7 @@ class AppSession {
 		ini_set('session.gc_maxlifetime',$session_timeout);
 		ini_set('session.cache_expire',$session_timeout/60);
 		if(AppConfig::session_redis()===TRUE) {
-			if(class_exists('Redis',FALSE)) {
+			if(class_exists('\Redis',FALSE)) {
 				try {
 					ini_set('session.save_handler','redis');
 					ini_set('session.save_path',AppConfig::session_redis_server());
@@ -196,11 +196,11 @@ class AppSession {
 						$dbg_data .= 'Session start done [handler: Redis]'."\n";
 					}//if(count($errors)>0)
 				}//try
-			}//if(class_exists('Redis',FALSE))
+			}//if(class_exists('\Redis',FALSE))
 		}//if(self::$session_redis===TRUE)
 		if(!self::$session_started && AppConfig::session_memcached()===TRUE) {
 			$errors = [];
-			if(class_exists('Memcached',FALSE)) {
+			if(class_exists('\Memcached',FALSE)) {
 				try {
 					ini_set('session.save_handler','memcached');
 					ini_set('session.save_path',AppConfig::session_memcached_server());
@@ -224,10 +224,10 @@ class AppSession {
 						$dbg_data .= 'Session start [handler: Memcached] errors: '.print_r($errors,1)."\n";
 					} else {
 						self::$session_started = TRUE;
-						$dbg_data .= 'Session start done [Memcached: Redis]'."\n";
+						$dbg_data .= 'Session start done [handler: Memcached]'."\n";
 					}//if(count($errors)>0)
 				}//try
-			} elseif(class_exists('Memcache',FALSE)) {
+			} elseif(class_exists('\Memcache',FALSE)) {
 				try {
 					ini_set('session.save_handler','memcache');
 					ini_set('session.save_path',AppConfig::session_memcached_server());
@@ -251,10 +251,10 @@ class AppSession {
 						$dbg_data .= 'Session start [handler: Memcache] errors: '.print_r($errors,1)."\n";
 					} else {
 						self::$session_started = TRUE;
-						$dbg_data .= 'Session start done [Memcache: Redis]'."\n";
+						$dbg_data .= 'Session start done [handler: Memcache]'."\n";
 					}//if(count($errors)>0)
 				}//try
-			}//if(class_exists('Memcached',FALSE))
+			}//if(class_exists('\Memcached',FALSE))
 		}//if(!$initialized && self::$session_memcached===TRUE)
 		if(class_exists('\ErrorHandler')) { \ErrorHandler::$silent_mode = FALSE; }
 		if(!self::$session_started) {
