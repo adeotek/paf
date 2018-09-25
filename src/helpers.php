@@ -9,7 +9,7 @@
  * @author     George Benjamin-Schonberger
  * @copyright  Copyright (c) 2012 - 2018 AdeoTEK
  * @license    LICENSE.md
- * @version    2.1.3
+ * @version    2.2.2
  * @filesource
  */
 	/**
@@ -391,6 +391,8 @@
 					return ($value ? TRUE : FALSE);
 				case 'is_object':
 					return is_object($value);
+                case 'is_scalar':
+                    return is_scalar($value);
 				case 'is_numeric':
 					return is_numeric($value);
 				case 'is_integer':
@@ -426,6 +428,8 @@
 				return ($value ? $value : $def_value);
 			case 'is_object':
 				return (is_object($value) ? $value : $def_value);
+			case 'is_scalar':
+                return is_scalar($value) ? $value : $def_value;
 			case 'is_numeric':
 				return (is_numeric($value) ? ($value+0) : $def_value);
 			case 'is_integer':
@@ -451,6 +455,7 @@
 			case 'db_date':
 			case 'db_datetime':
 				return (is_string($value) && strlen($value) ? strval($value) : $def_value);
+			case 'is_bool':
 			case 'bool':
 				return (isset($value) ? (strtolower($value)=='true' ? TRUE : (strtolower($value)=='false' ? FALSE : ($value ? TRUE : FALSE))) : $def_value);
 			case 'isset':
