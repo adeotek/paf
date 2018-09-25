@@ -380,13 +380,17 @@
 	 * @return  mixed Returns param value or default value if not validated
 	 * or TRUE/FALSE if $checkonly is TRUE
 	 */
-	function validate_param($value,$def_value = NULL,$validation = NULL,$checkonly = FALSE) {
-		if(!is_string($validation) || !strlen($validation)) {
+	function validate_param($value,$def_value = NULL,?string $validation = NULL,bool $checkonly = FALSE) {
+		if(!strlen($validation)) {
 			if($checkonly) { return isset($value); }
 			return (isset($value) ? $value : $def_value);
-		}//if(!is_string($validation) || !strlen($validation))
+		}//if(!strlen($validation))
+        if(substr($validation,0,1)=='?') {
+            if(is_null($value)) { return NULL; }
+            $validation = substr($validation,1);
+        }//if(substr($validation,0,1)=='?')
 		if($checkonly) {
-			switch(strtolower($validation)){
+			switch(strtolower($validation)) {
 				case 'true':
 					return ($value ? TRUE : FALSE);
 				case 'is_object':
@@ -410,11 +414,11 @@
 				case 'is_notempty_array':
 					return (is_array($value) && count($value));
 				case 'is_string':
-					return (is_string($value) || is_numeric($value));
+					return is_scalar($value);
 				case 'is_notempty_string':
-					return ((is_string($value) || is_numeric($value)) && strlen($value));
+					return (is_scalar($value) && strlen(strval($value)));
 				case 'trim_is_notempty_string':
-					return ((is_string($value) || is_numeric($value)) && strlen(trim($value)));
+					return (is_scalar($value) && strlen(trim(strval($value))));
 				case 'db_date':
 				case 'db_datetime':
 					return (is_string($value) && strlen($value));
@@ -423,7 +427,7 @@
 			    default: return isset($value);
 			}//END switch
 		}//if($checkonly)
-		switch(strtolower($validation)){
+		switch(strtolower($validation)) {
 			case 'true':
 				return ($value ? $value : $def_value);
 			case 'is_object':
@@ -447,11 +451,11 @@
 			case 'is_notempty_array':
 				return (is_array($value) && count($value) ? $value : $def_value);
 			case 'is_string':
-				return (is_string($value) || is_numeric($value) ? strval($value) : $def_value);
+				return (is_scalar($value) ? strval($value) : $def_value);
 			case 'is_notempty_string':
-				return ((is_string($value) || is_numeric($value)) && strlen($value) ? strval($value) : $def_value);
+				return (is_scalar($value) && strlen(strval($value)) ? strval($value) : $def_value);
 			case 'trim_is_notempty_string':
-				return ((is_string($value) || is_numeric($value)) && strlen(trim($value)) ? strval($value) : $def_value);
+				return (is_scalar($value) && strlen(trim(strval($value))) ? strval($value) : $def_value);
 			case 'db_date':
 			case 'db_datetime':
 				return (is_string($value) && strlen($value) ? strval($value) : $def_value);
@@ -474,7 +478,7 @@
 	 * @return  bool Returns TRUE if $key exists in the $array or FALSE otherwise.
 	 * If $validation is not NULL, result is TRUE only if $array[$key] is validated
 	 */
-	function check_array_key($key,&$array,$validation = NULL) {
+	function check_array_key($key,&$array,?string $validation = NULL) {
 		if(!is_array($array) || is_null($key) || (!is_integer($key) && !is_string($key)) || !array_key_exists($key,$array)){ return FALSE; }
 		if(!is_string($validation)){ return TRUE; }
 		return validate_param($array[$key],NULL,$validation,TRUE);
@@ -490,7 +494,7 @@
 	 * (as implemented in validate_param function)
 	 * @return  mixed Returns param value or default value if not validated
 	 */
-	function get_array_value(&$params,$key,$def_value = NULL,$validation = NULL) {
+	function get_array_value(&$params,$key,$def_value = NULL,?string $validation = NULL) {
 	    if(is_array($key)) {
 	        if(!count($key)) { return $def_value; }
 	        $lKey = array_shift($key);
@@ -531,7 +535,7 @@
 	 * @param   string $sub_key
 	 * @return  mixed Returns param value or default value if not validated
 	 */
-	function get_array_param(&$params,$key,$def_value = NULL,$validation = NULL,$sub_key = NULL) {
+	function get_array_param(&$params,$key,$def_value = NULL,?string $validation = NULL,$sub_key = NULL) {
 		if(is_null($key) || (!is_integer($key) && !is_string($key))) { return $def_value; }
 		if(is_array($params)) {
 			if(!array_key_exists($key,$params)) { return $def_value; }
