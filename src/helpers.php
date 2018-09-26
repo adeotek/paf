@@ -422,6 +422,9 @@
 				case 'db_date':
 				case 'db_datetime':
 					return (is_string($value) && strlen($value));
+                case 'is_bool':
+                case 'is_boolean':
+                    return is_bool($value);
 				case 'isset':
 				case 'bool':
 			    default: return isset($value);
@@ -460,6 +463,8 @@
 			case 'db_datetime':
 				return (is_string($value) && strlen($value) ? strval($value) : $def_value);
 			case 'is_bool':
+            case 'is_boolean':
+                return is_bool($value) ? $value : $def_value;
 			case 'bool':
 				return (isset($value) ? (strtolower($value)=='true' ? TRUE : (strtolower($value)=='false' ? FALSE : ($value ? TRUE : FALSE))) : $def_value);
 			case 'isset':
