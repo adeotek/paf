@@ -113,7 +113,7 @@ class AppConfig {
                 } elseif(!isset(static::$instanceConfig[$section][$option])) {
                     static::$instanceConfig[$section][$option] = [];
                 }//if(!isset($result[$section]))
-                static::$instanceConfig[$section][$option][(string)$contextId] = get_array_param($item,'value','','is_string');
+                static::$instanceConfig[$section][$option][(string)$contextId] = get_array_param($item,'ivalue',get_array_param($item,'svalue',get_array_param($item,'value',NULL,'isset'),'is_string'),'is_integer');
             }//END foreach
         } else {
             static::$instanceConfig = $config;
