@@ -771,10 +771,10 @@
 		if($namespaced) {
 			$str_arr = explode('-',$string);
 			$result = implode('\\',array_map(function($str){
-				return custom_ucfirst($str,TRUE,TRUE,'_',TRUE);
+				return custom_ucfirst($str,TRUE,FALSE,'_',TRUE);
 			},$str_arr));
 		} else {
-		$result = custom_ucfirst($string,TRUE,TRUE,'_',TRUE);
+		    $result = custom_ucfirst($string,TRUE,FALSE,'_',TRUE);
 			if($lower_first) { $result = lcfirst($result); }
 		}//if($namespaced)
 		return $result;
