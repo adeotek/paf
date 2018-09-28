@@ -113,27 +113,28 @@ class AppConfig {
                 } elseif(!isset(static::$instanceConfig[$section][$option])) {
                     static::$instanceConfig[$section][$option] = [];
                 }//if(!isset($result[$section]))
-                static::$instanceConfig[$section][$option][(string)$contextId] = get_array_param($item,'value','','is_string');
+                static::$instanceConfig[$section][$option][(string)$contextId] = get_array_param($item,'ivalue',get_array_param($item,'svalue',get_array_param($item,'value',NULL,'isset'),'is_string'),'is_integer');
             }//END foreach
         } else {
             static::$instanceConfig = $config;
         }//if($raw)
         return static::$instanceConfig;
 	}//END public static function SetInstanceConfigData
-	/**
-     * @param string   $option
-     * @param string   $section
-     * @param int|null $contextId
+    /**
+     * @param string      $option
+     * @param string      $section
+     * @param null        $defValue
+     * @param null|string $validation
+     * @param int|null    $contextId
      * @return string|null
      * @access public
-     * @throws \Exception
      * @static
      */
-    public static function GetInstanceOption(string $option,string $section = '',?int $contextId = NULL): ?string {
+    public static function GetInstanceOption(string $option,string $section = '',$defValue = NULL,?string $validation = NULL,?int $contextId = NULL): ?string {
         $options = get_array_value(static::$instanceConfig,[strtolower($section),strtolower($option)],[],'is_array');
-        $defValue = get_array_param($options,'',NULL,'is_string');
+        $defValue = get_array_value($options,'',$defValue,$validation);
         if(is_null($contextId)) { return $defValue; }
-        return get_array_value($options,$contextId,$defValue,'is_string');
+        return get_array_value($options,$contextId,$defValue,$validation);
 	}//END public static function GetInstanceOption
 }//END class AppConfig
 ?>

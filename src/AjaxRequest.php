@@ -179,7 +179,7 @@ class AjaxRequest {
 		$js .= "\t".'var AAPP_JS_PATH="'.$this->app->app_web_link.AppConfig::app_js_path().'";'."\n";
 		$js .= '</script>'."\n";
 		$js .= '<script type="text/javascript" src="'.$this->app->app_web_link.AppConfig::app_js_path().'/gibberish-aes.min.js?v=1411031"></script>'."\n";
-		$js .= '<script type="text/javascript" src="'.$this->app->app_web_link.AppConfig::app_js_path().'/arequest.min.js?v=1804291"></script>'."\n";
+		$js .= '<script type="text/javascript" src="'.$this->app->app_web_link.AppConfig::app_js_path().'/arequest.min.js?v=1809281"></script>'."\n";
 		if(is_object($this->app->debugger)) {
 			$dbg_scripts = $this->app->debugger->GetScripts();
 			if(is_array($dbg_scripts) && count($dbg_scripts)) {
