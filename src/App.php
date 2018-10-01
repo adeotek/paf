@@ -123,7 +123,7 @@ class App implements IApp {
 	 */
 	public static function __callStatic($name,$arguments) {
 		$class = get_called_class();
-		if(!is_object(self::$_app_instance)) { throw new AppException("Invalid class [{$class}] instance",E_ERROR); }
+		if(!is_object(self::$_app_instance)) { throw new AppException("Invalid class [{$class}] instance static call for [{$name}]",E_ERROR); }
 		// self::$_app_instance->Dlog($name,'__callStatic:name');
 		// self::$_app_instance->Dlog($class,'__callStatic:class');
 		$reflector = new \ReflectionClass($class);
