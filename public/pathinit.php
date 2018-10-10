@@ -19,12 +19,12 @@
 	// Paths constants definition (Editable zone)
 	define('_AAPP_APPLICATION_PATH','');
 	define('_AAPP_CONFIG_PATH','config');
-	define('_AAP_PUBLIC_ROOT_PATH',DIRECTORY_SEPARATOR.'public');
-	define('_AAP_PUBLIC_PATH','');
+	define('_AAPP_PUBLIC_ROOT_PATH',DIRECTORY_SEPARATOR.'public');
+	define('_AAPP_PUBLIC_PATH','');
 	// END Paths constants definition (Editable zone)
 	$aapp_root_path = dirname(__FILE__).DIRECTORY_SEPARATOR;
-	if(strlen(_AAP_PUBLIC_ROOT_PATH._AAP_PUBLIC_PATH)>0) {
-		$aapp_root_path .= str_repeat('..'.DIRECTORY_SEPARATOR,substr_count(trim(_AAP_PUBLIC_ROOT_PATH._AAP_PUBLIC_PATH,DIRECTORY_SEPARATOR),DIRECTORY_SEPARATOR)+1);
-	}//if(strlen(_AAP_PUBLIC_ROOT_PATH._AAP_PUBLIC_PATH)>0)
+	if(strlen(_AAPP_PUBLIC_ROOT_PATH._AAPP_PUBLIC_PATH)>0) {
+		$aapp_root_path .= str_repeat('..'.DIRECTORY_SEPARATOR,substr_count(trim(_AAPP_PUBLIC_ROOT_PATH._AAPP_PUBLIC_PATH,DIRECTORY_SEPARATOR),DIRECTORY_SEPARATOR)+1);
+	}//if(strlen(_AAPP_PUBLIC_ROOT_PATH._AAPP_PUBLIC_PATH)>0)
 	define('_AAPP_ROOT_PATH',realpath($aapp_root_path));
 ?>

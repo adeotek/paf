@@ -221,7 +221,7 @@ class App implements IApp {
 	protected function __construct($ajax = FALSE,$params = [],$do_not_keep_alive = NULL,$shell = FALSE) {
 		$this->app_absolute_path = _AAPP_ROOT_PATH;
 		$this->app_path = _AAPP_ROOT_PATH._AAPP_APPLICATION_PATH;
-		$this->app_public_path = _AAPP_ROOT_PATH._AAP_PUBLIC_ROOT_PATH._AAP_PUBLIC_PATH;
+		$this->app_public_path = _AAPP_ROOT_PATH._AAPP_PUBLIC_ROOT_PATH._AAPP_PUBLIC_PATH;
 		$this->ajax = $ajax;
 		$this->keep_alive = $do_not_keep_alive ? FALSE : TRUE;
 		if($shell) {
@@ -517,7 +517,7 @@ class App implements IApp {
     public function InitDebugger() {
 		if(AppConfig::debug()!==TRUE || !class_exists('PAF\Debugger')) { return FALSE; }
 		if(is_object($this->debugger)) { return $this->debugger->IsEnabled(); }
-		$tmp_path = isset($_SERVER['DOCUMENT_ROOT']) && strpos(_AAPP_ROOT_PATH, $_SERVER['DOCUMENT_ROOT'])!==FALSE ? _AAPP_ROOT_PATH.'/../tmp' : _AAPP_ROOT_PATH._AAPP_APPLICATION_PATH.'/tmp';
+		$tmp_path = isset($_SERVER['DOCUMENT_ROOT']) && strlen($_SERVER['DOCUMENT_ROOT']) && strpos(_AAPP_ROOT_PATH,$_SERVER['DOCUMENT_ROOT'])!==FALSE ? _AAPP_ROOT_PATH.'/../tmp' : _AAPP_ROOT_PATH._AAPP_APPLICATION_PATH.'/tmp';
 		$this->debugger = new Debugger(AppConfig::debug(),_AAPP_ROOT_PATH._AAPP_APPLICATION_PATH.AppConfig::logs_path(),$tmp_path,AppConfig::debug_console_password());
 		$this->debugger->log_file = AppConfig::log_file();
 		$this->debugger->errors_log_file = AppConfig::errors_log_file();

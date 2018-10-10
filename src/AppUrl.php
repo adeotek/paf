@@ -71,9 +71,9 @@ class AppUrl {
 	 */
 	public static function ExtractUrlPath($startup_path = NULL) {
 		if(strlen($startup_path)) {
-			self::$url_path = str_replace('\\','/',(str_replace(_AAPP_ROOT_PATH._AAP_PUBLIC_ROOT_PATH,'',$startup_path)));
+			self::$url_path = str_replace('\\','/',(str_replace(_AAPP_ROOT_PATH._AAPP_PUBLIC_ROOT_PATH,'',$startup_path)));
 			self::$url_path = trim(str_replace(trim(self::$url_path,'/'),'',trim(dirname($_SERVER['SCRIPT_NAME']),'/')),'/');
-			self::$url_path = (strlen(self::$url_path) ? '/'.self::$url_path : '')._AAP_PUBLIC_PATH;
+			self::$url_path = (strlen(self::$url_path) ? '/'.self::$url_path : '')._AAPP_PUBLIC_PATH;
 		} else {
 			self::$url_path = '/'.trim(dirname($_SERVER['SCRIPT_NAME']),'/\\');
 		}//if(strlen($startup_path))
