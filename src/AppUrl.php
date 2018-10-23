@@ -73,11 +73,11 @@ class AppUrl {
 		if(strlen($startup_path)) {
 			self::$url_path = str_replace('\\','/',(str_replace(_AAPP_ROOT_PATH._AAPP_PUBLIC_ROOT_PATH,'',$startup_path)));
 			self::$url_path = trim(str_replace(trim(self::$url_path,'/'),'',trim(dirname($_SERVER['SCRIPT_NAME']),'/')),'/');
-			self::$url_path = (strlen(self::$url_path) ? '/'.self::$url_path : '')._AAPP_PUBLIC_PATH;
+			self::$url_path = trim(self::$url_path.'/'.trim(_AAPP_PUBLIC_PATH,'\/'),'\/');
 		} else {
-			self::$url_path = '/'.trim(dirname($_SERVER['SCRIPT_NAME']),'/\\');
+			self::$url_path = trim(dirname($_SERVER['SCRIPT_NAME']),'\/');
 		}//if(strlen($startup_path))
-		return rtrim(self::$url_path,'/');
+		return (strlen(self::$url_path) ? '/'.self::$url_path : '');
 	}//END public static function ExtractUrlPath
 	/**
 	 * Gets the base URL of the application.
@@ -103,7 +103,7 @@ class AppUrl {
 	public function __construct(string $app_domain,string $app_web_protocol,string $url_folder) {
 		$this->app_domain = $app_domain;
 		$this->app_web_protocol = $app_web_protocol;
-		$this->url_folder = $url_folder;
+		$this->url_folder = strlen(trim($url_folder,'\/ ')) ? '/'.trim($url_folder,'\/ ') : '';
 		if(isset($_SERVER['REQUEST_URI'])) {
 			$uri_len = strpos($_SERVER['REQUEST_URI'],'?')!==FALSE ? strpos($_SERVER['REQUEST_URI'],'?') : (strpos($_SERVER['REQUEST_URI'],'#')!==FALSE ? strpos($_SERVER['REQUEST_URI'],'#') : strlen($_SERVER['REQUEST_URI']));
 			$this->url_base = $this->app_web_protocol.$this->app_domain.substr($_SERVER['REQUEST_URI'],0,$uri_len);
@@ -122,7 +122,7 @@ class AppUrl {
 	 * @return string
 	 */
 	public function GetWebLink(): string {
-		return $this->app_web_protocol.$this->app_domain.(strlen($this->url_folder) ? '/' : '').$this->url_folder;
+		return $this->app_web_protocol.$this->app_domain.$this->url_folder;
 	}//END public function GetWebLink
 	/**
 	 * @return string
