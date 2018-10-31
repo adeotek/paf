@@ -8,7 +8,7 @@
  * @author     George Benjamin-Schonberger
  * @copyright  Copyright (c) 2012 - 2018 AdeoTEK
  * @license    LICENSE.md
- * @version    2.1.2
+ * @version    2.3.0
  * @filesource
  */
 namespace PAF;
@@ -167,6 +167,19 @@ class AjaxRequest {
 	public function HasActions() {
 		return (count($this->request_actions)>0);
 	}//END public function HasActions
+
+    /**
+     * Sets params to be send via post on the ajax request
+     *
+     * @param string $targetId
+     * @return bool
+     * @access public
+     */
+	public function SetDynamicTarget(string $targetId): bool {
+		if(!strlen(trim($targetId))) { return FALSE; }
+		header('HTMLTargetId: '.$targetId);
+		return TRUE;
+	}//END public function SetPostParams
 	/**
 	 * @param bool $with_output
 	 * @return string
@@ -179,7 +192,7 @@ class AjaxRequest {
 		$js .= "\t".'var AAPP_JS_PATH="'.$this->app->app_web_link.AppConfig::app_js_path().'";'."\n";
 		$js .= '</script>'."\n";
 		$js .= '<script type="text/javascript" src="'.$this->app->app_web_link.AppConfig::app_js_path().'/gibberish-aes.min.js?v=1411031"></script>'."\n";
-		$js .= '<script type="text/javascript" src="'.$this->app->app_web_link.AppConfig::app_js_path().'/arequest.min.js?v=1809281"></script>'."\n";
+		$js .= '<script type="text/javascript" src="'.$this->app->app_web_link.AppConfig::app_js_path().'/arequest.min.js?v=1811011"></script>'."\n";
 		if(is_object($this->app->debugger)) {
 			$dbg_scripts = $this->app->debugger->GetScripts();
 			if(is_array($dbg_scripts) && count($dbg_scripts)) {
