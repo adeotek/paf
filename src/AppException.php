@@ -8,7 +8,7 @@
  * @author     George Benjamin-Schonberger
  * @copyright  Copyright (c) 2012 - 2018 AdeoTEK
  * @license    LICENSE.md
- * @version    2.1.0
+ * @version    2.3.1
  * @filesource
  */
 namespace PAF;
@@ -46,6 +46,16 @@ final class AppException extends \ErrorException {
 	 * @access public
 	 */
 	public $error_info = [];
+    /**
+     * Get AppExeption instance from another exception instance
+     *
+     * @param Exception $e
+     * @return \PAF\AppException
+     */
+    public static function GetInstance($e): AppException {
+	    if(!is_object($e)) { return new AppException('Unknown exception!'); }
+	    return new AppException($e->getMessage(),$e->getCode(),1,$e->getFile(),$e->getLine());
+	}//END public static function GetInstance
 	/**
 	 * Class constructor method
 	 *
@@ -144,4 +154,3 @@ final class AppException extends \ErrorException {
 		return $result;
 	}//END public function getFullMessage
 }//END class AppException extends ErrorException
-?>

@@ -159,13 +159,13 @@ class AjaxRequest {
 	 * @access public
 	 */
 	public function SetPostParams($params) {
-		if(is_array($params) && count($params)>0) { $this->post_params = $params; }
+		if(is_array($params) && count($params)) { $this->post_params = $params; }
 	}//END public function SetPostParams
 	/**
 	 * @return bool
 	 */
 	public function HasActions() {
-		return (count($this->request_actions)>0);
+		return (bool)count($this->request_actions);
 	}//END public function HasActions
 
     /**
@@ -613,7 +613,8 @@ class AjaxRequest {
 	 */
 	public function GetActions() {
 		if(!$this->HasActions()) { return NULL; }
-		return self::$app_act_sep.implode(';',$this->request_actions).self::$app_act_sep;
+		$actions = implode(';',array_map(function($value){return trim($value,';');},$this->request_actions)).';';
+		return self::$app_act_sep.$actions.self::$app_act_sep;
 	}//END public function GetActions
 /*** PAF js response functions ***/
 	/**
