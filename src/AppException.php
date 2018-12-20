@@ -49,7 +49,7 @@ final class AppException extends \ErrorException {
     /**
      * Get AppExeption instance from another exception instance
      *
-     * @param Exception $e
+     * @param \Exception $e
      * @return \PAF\AppException
      */
     public static function GetInstance($e): AppException {
