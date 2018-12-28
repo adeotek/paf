@@ -9,7 +9,7 @@
  * @author     George Benjamin-Schonberger
  * @copyright  Copyright (c) 2012 - 2018 AdeoTEK
  * @license    LICENSE.md
- * @version    2.2.2
+ * @version    2.3.2
  * @filesource
  */
 	/**
@@ -376,20 +376,20 @@
 	 * @param   mixed $value Variable to be validated
 	 * @param   mixed $def_value Default value to be returned if param is not validated
 	 * @param   string $validation Validation type
-	 * @param   bool $checkonly Flag for setting validation as check only
+	 * @param   bool $checkOnly Flag for setting validation as check only
 	 * @return  mixed Returns param value or default value if not validated
-	 * or TRUE/FALSE if $checkonly is TRUE
+	 * or TRUE/FALSE if $checkOnly is TRUE
 	 */
-	function validate_param($value,$def_value = NULL,?string $validation = NULL,bool $checkonly = FALSE) {
+	function validate_param($value,$def_value = NULL,?string $validation = NULL,bool $checkOnly = FALSE) {
 		if(!strlen($validation)) {
-			if($checkonly) { return isset($value); }
+			if($checkOnly) { return isset($value); }
 			return (isset($value) ? $value : $def_value);
 		}//if(!strlen($validation))
         if(substr($validation,0,1)=='?') {
             if(is_null($value)) { return NULL; }
             $validation = substr($validation,1);
         }//if(substr($validation,0,1)=='?')
-		if($checkonly) {
+		if($checkOnly) {
 			switch(strtolower($validation)) {
 				case 'true':
 					return ($value ? TRUE : FALSE);
@@ -429,7 +429,7 @@
 				case 'bool':
 			    default: return isset($value);
 			}//END switch
-		}//if($checkonly)
+		}//if($checkOnly)
 		switch(strtolower($validation)) {
 			case 'true':
 				return ($value ? $value : $def_value);
@@ -541,21 +541,8 @@
 	 * @return  mixed Returns param value or default value if not validated
 	 */
 	function get_array_param(&$params,$key,$def_value = NULL,?string $validation = NULL,$sub_key = NULL) {
-		if(is_null($key) || (!is_integer($key) && !is_string($key))) { return $def_value; }
-		if(is_array($params)) {
-			if(!array_key_exists($key,$params)) { return $def_value; }
-			$value = $params[$key];
-		} elseif(is_object($params) && method_exists($params,'toArray')) {
-			$lparams = $params->toArray();
-			if(!is_array($lparams) || !array_key_exists($key,$lparams)) { return $def_value; }
-			$value = $lparams[$key];
-		} else {
-			return $def_value;
-		}//if(is_array($params))
-		if(!isset($sub_key) || (!is_string($sub_key) && !is_numeric($sub_key))) {
-			return validate_param($value,$def_value,$validation);
-		}//if(!isset($sub_key) || (!is_string($sub_key) && !is_numeric($sub_key)))
-		return get_array_param($value,$sub_key,$def_value,$validation);
+	    if(is_string($sub_key) || is_numeric($sub_key)) { $key = [$key,$sub_key]; }
+	    return get_array_value($params,$key,$def_value,$validation);
 	}//END function get_array_param
 	/**
 	 * Converts a hex color to RGB
