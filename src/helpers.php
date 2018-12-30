@@ -208,10 +208,10 @@
 	 * and the  class name (if there is one) of the specified step.
 	 * @return  array The full array or an array containing function/method and class names from the specified stop.
 	 */
-	function call_back_trace($step = 1,$param = 'function') {
-		$result = array();
+	function call_back_trace(int $step = 1,?string $param = 'function') {
+		$result = [];
 		$trdata = debug_backtrace();
-		if(!is_numeric($step) || $step<0 || !array_key_exists($step,$trdata)) { return $result; }
+		if($step<0 || !array_key_exists($step,$trdata)) { return $result; }
 		$lstep = $step + 1;
 		switch(strtolower($param)) {
 			case 'function':
@@ -219,7 +219,6 @@
 				$result = array_key_exists($param,$trdata[$lstep]) ? $trdata[$lstep][$param] : '';
 				break;
 			case 'array':
-			case '':
 				$result = array(
 						'function'=>(array_key_exists('function',$trdata[$lstep]) ? $trdata[$lstep]['function'] : ''),
 						'class'=>(array_key_exists('class',$trdata[$lstep]) ? $trdata[$lstep]['class'] : ''),
@@ -229,6 +228,7 @@
 				$result = $trdata[$lstep];
 				break;
 			default:
+			    $result = (array_key_exists('class',$trdata[$lstep]) ? $trdata[$lstep]['class'].'::' : '').(array_key_exists('function',$trdata[$lstep]) ? $trdata[$lstep]['function'] : '').(array_key_exists('file',$trdata[$lstep]) ? ' in file ['.$trdata[$lstep]['file'].']' : '').(array_key_exists('line',$trdata[$lstep]) ? ' on line ['.$trdata[$lstep]['line'].']' : '');
 				break;
 		}//END switch
 		return $result;
