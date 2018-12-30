@@ -9,7 +9,7 @@
  * @author     George Benjamin-Schonberger
  * @copyright  Copyright (c) 2012 - 2018 AdeoTEK
  * @license    LICENSE.md
- * @version    2.2.2
+ * @version    2.3.2
  * @filesource
  */
 	/**
@@ -208,10 +208,10 @@
 	 * and the  class name (if there is one) of the specified step.
 	 * @return  array The full array or an array containing function/method and class names from the specified stop.
 	 */
-	function call_back_trace($step = 1,$param = 'function') {
-		$result = array();
+	function call_back_trace(int $step = 1,?string $param = 'function') {
+		$result = [];
 		$trdata = debug_backtrace();
-		if(!is_numeric($step) || $step<0 || !array_key_exists($step,$trdata)) { return $result; }
+		if($step<0 || !array_key_exists($step,$trdata)) { return $result; }
 		$lstep = $step + 1;
 		switch(strtolower($param)) {
 			case 'function':
@@ -219,7 +219,6 @@
 				$result = array_key_exists($param,$trdata[$lstep]) ? $trdata[$lstep][$param] : '';
 				break;
 			case 'array':
-			case '':
 				$result = array(
 						'function'=>(array_key_exists('function',$trdata[$lstep]) ? $trdata[$lstep]['function'] : ''),
 						'class'=>(array_key_exists('class',$trdata[$lstep]) ? $trdata[$lstep]['class'] : ''),
@@ -229,6 +228,7 @@
 				$result = $trdata[$lstep];
 				break;
 			default:
+			    $result = (array_key_exists('class',$trdata[$lstep]) ? $trdata[$lstep]['class'].'::' : '').(array_key_exists('function',$trdata[$lstep]) ? $trdata[$lstep]['function'] : '').(array_key_exists('file',$trdata[$lstep]) ? ' in file ['.$trdata[$lstep]['file'].']' : '').(array_key_exists('line',$trdata[$lstep]) ? ' on line ['.$trdata[$lstep]['line'].']' : '');
 				break;
 		}//END switch
 		return $result;
@@ -376,20 +376,20 @@
 	 * @param   mixed $value Variable to be validated
 	 * @param   mixed $def_value Default value to be returned if param is not validated
 	 * @param   string $validation Validation type
-	 * @param   bool $checkonly Flag for setting validation as check only
+	 * @param   bool $checkOnly Flag for setting validation as check only
 	 * @return  mixed Returns param value or default value if not validated
-	 * or TRUE/FALSE if $checkonly is TRUE
+	 * or TRUE/FALSE if $checkOnly is TRUE
 	 */
-	function validate_param($value,$def_value = NULL,?string $validation = NULL,bool $checkonly = FALSE) {
+	function validate_param($value,$def_value = NULL,?string $validation = NULL,bool $checkOnly = FALSE) {
 		if(!strlen($validation)) {
-			if($checkonly) { return isset($value); }
+			if($checkOnly) { return isset($value); }
 			return (isset($value) ? $value : $def_value);
 		}//if(!strlen($validation))
         if(substr($validation,0,1)=='?') {
             if(is_null($value)) { return NULL; }
             $validation = substr($validation,1);
         }//if(substr($validation,0,1)=='?')
-		if($checkonly) {
+		if($checkOnly) {
 			switch(strtolower($validation)) {
 				case 'true':
 					return ($value ? TRUE : FALSE);
@@ -429,7 +429,7 @@
 				case 'bool':
 			    default: return isset($value);
 			}//END switch
-		}//if($checkonly)
+		}//if($checkOnly)
 		switch(strtolower($validation)) {
 			case 'true':
 				return ($value ? $value : $def_value);
@@ -541,21 +541,8 @@
 	 * @return  mixed Returns param value or default value if not validated
 	 */
 	function get_array_param(&$params,$key,$def_value = NULL,?string $validation = NULL,$sub_key = NULL) {
-		if(is_null($key) || (!is_integer($key) && !is_string($key))) { return $def_value; }
-		if(is_array($params)) {
-			if(!array_key_exists($key,$params)) { return $def_value; }
-			$value = $params[$key];
-		} elseif(is_object($params) && method_exists($params,'toArray')) {
-			$lparams = $params->toArray();
-			if(!is_array($lparams) || !array_key_exists($key,$lparams)) { return $def_value; }
-			$value = $lparams[$key];
-		} else {
-			return $def_value;
-		}//if(is_array($params))
-		if(!isset($sub_key) || (!is_string($sub_key) && !is_numeric($sub_key))) {
-			return validate_param($value,$def_value,$validation);
-		}//if(!isset($sub_key) || (!is_string($sub_key) && !is_numeric($sub_key)))
-		return get_array_param($value,$sub_key,$def_value,$validation);
+	    if(is_string($sub_key) || is_numeric($sub_key)) { $key = [$key,$sub_key]; }
+	    return get_array_value($params,$key,$def_value,$validation);
 	}//END function get_array_param
 	/**
 	 * Converts a hex color to RGB
