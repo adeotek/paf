@@ -8,12 +8,11 @@
  * @author     George Benjamin-Schonberger
  * @copyright  Copyright (c) 2012 - 2018 AdeoTEK
  * @license    LICENSE.md
- * @version    2.1.2
+ * @version    2.3.4
  * @filesource
  */
 namespace PAF;
 if(!defined('_VALID_AAPP_REQ') || _VALID_AAPP_REQ!==TRUE) { die('Invalid request!'); }
-// require_once(__DIR__.'/helpers.php');
 /**
  * AppConfig is the application global configuration class
  *
@@ -69,6 +68,9 @@ if(!defined('_VALID_AAPP_REQ') || _VALID_AAPP_REQ!==TRUE) { die('Invalid request
  * @method static doctrine_cache_driver()
  * @method static doctrine_proxies_namespace()
  * @method static doctrine_develop_mode()
+ * @method static convertor_adapter_class()
+ * @method static validator_adapter_class()
+ * @method static formatter_adapter_class()
  */
 class AppConfig {
 	/**
@@ -184,4 +186,3 @@ class AppConfig {
         return get_array_value($options,$contextId,$defValue,$validation);
 	}//END public static function GetInstanceOption
 }//END class AppConfig
-?>
